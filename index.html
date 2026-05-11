@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dots and Boxes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 24px;
+      color: #e94560;
+      letter-spacing: 2px;
+    }
+
+    #setup {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 30px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #setup label {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    #setup input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0f3460;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .size-options {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .size-card {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #0f3460;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .size-card:hover { border-color: #4895ef; }
+
+    .size-card.selected {
+      border-color: #ffd700;
+      background: rgba(255,215,0,0.1);
+    }
+
+    .size-label {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #fff;
+    }
+
+    .size-sub {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: #e94560;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .checkbox-row span {
+      font-size: 0.88rem;
+      color: #ccc;
+      line-height: 1.4;
+    }
+
+    #startBtn {
+      margin-top: 8px;
+      padding: 12px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    #startBtn:hover { background: #c73652; }
+
+    #game { display: none; flex-direction: column; align-items: center; gap: 20px; }
+
+    #scoreboard {
+      display: flex;
+      gap: 40px;
+      font-size: 1.1rem;
+    }
+
+    .score-card {
+      text-align: center;
+      padding: 12px 24px;
+      border-radius: 10px;
+      background: #16213e;
+      min-width: 120px;
+    }
+
+    .score-card-p1 { border: 2px solid rgba(233,69,96,0.3); }
+    .score-card-p2 { border: 2px solid rgba(72,149,239,0.3); }
+    .score-card-p1.active { border: 3px solid #ffd700; background: rgba(233,69,96,0.15); }
+    .score-card-p2.active { border: 3px solid #ffd700; background: rgba(72,149,239,0.15); }
+    .score-card.inactive { opacity: 0.5; }
+
+    .score-card .name { font-weight: bold; font-size: 1rem; }
+    .score-card .pts { font-size: 1.8rem; font-weight: bold; color: #e94560; }
+
+    #turnIndicator {
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    #gridContainer { position: relative; }
+
+    canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    #result {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      background: #16213e;
+      padding: 40px 50px;
+      border-radius: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #result .trophy {
+      font-size: 5rem;
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1);    filter: drop-shadow(0 0 8px #ffd700); }
+      to   { transform: scale(1.15); filter: drop-shadow(0 0 24px #ffd700); }
+    }
+
+    #result h2 {
+      font-size: 2.2rem;
+      color: #ffd700;
+      letter-spacing: 1px;
+    }
+
+    #result .final-scores {
+      display: flex;
+      gap: 30px;
+    }
+
+    #result .final-score-card {
+      padding: 12px 24px;
+      border-radius: 10px;
+      background: #0f3460;
+      min-width: 110px;
+    }
+
+    #result .final-score-card .fs-name { font-size: 0.9rem; color: #aaa; }
+    #result .final-score-card .fs-pts  { font-size: 2rem; font-weight: bold; }
+    #result .final-score-card.winner-card { border: 2px solid #ffd700; }
+
+    .btn-row { display: flex; gap: 16px; margin-top: 8px; }
+
+    #rematchBtn {
+      padding: 12px 28px;
+      background: #e94560;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #rematchBtn:hover { background: #c73652; }
+
+    #newGameBtn {
+      padding: 12px 28px;
+      background: #0f3460;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #newGameBtn:hover { background: #1a4a8a; }
+
+    .confetti-piece {
+      position: fixed;
+      width: 10px;
+      height: 14px;
+      top: -20px;
+      opacity: 0;
+      animation: confettiFall linear forwards;
+      border-radius: 2px;
+      z-index: 999;
+    }
+
+    @keyframes confettiFall {
+      0%   { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Dots & Boxes</h1>
+
+  <!-- SETUP SCREEN -->
+  <div id="setup">
+    <div>
+      <label>Player 1 Name</label>
+      <input type="text" id="p1name" placeholder="Enter name..." maxlength="12">
+    </div>
+    <div>
+      <label>Player 2 Name</label>
+      <input type="text" id="p2name" placeholder="Enter name..." maxlength="12">
+    </div>
+    <div>
+      <label>Grid Size</label>
+      <div class="size-options">
+        <div class="size-card" data-dots="5">
+          <div class="size-label">Small</div>
+          <div class="size-sub">4×4 boxes · 16 total</div>
+        </div>
+        <div class="size-card selected" data-dots="6">
+          <div class="size-label">Medium</div>
+          <div class="size-sub">5×5 boxes · 25 total</div>
+        </div>
+        <div class="size-card" data-dots="7">
+          <div class="size-label">Large</div>
+          <div class="size-sub">6×6 boxes · 36 total</div>
+        </div>
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="bonusTurn">
+      <span><strong>Bonus Turn Rule:</strong> If you complete a box, you get an extra turn. Rewards skill and chain reactions — recommended for competitive play.</span>
+    </div>
+    <button id="startBtn">Start Game</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game">
+    <div id="scoreboard">
+      <div class="score-card score-card-p1 active" id="card1">
+        <div class="name" id="nameDisplay1">P1</div>
+        <div class="pts" id="score1">0</div>
+      </div>
+      <div class="score-card score-card-p2" id="card2">
+        <div class="name" id="nameDisplay2">P2</div>
+        <div class="pts" style="color:#4895ef" id="score2">0</div>
+      </div>
+    </div>
+    <div id="turnIndicator">— waiting —</div>
+    <div id="gridContainer">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result">
+    <div class="trophy">🏆</div>
+    <h2 id="resultTitle"></h2>
+    <div class="final-scores">
+      <div class="final-score-card" id="finalCard1">
+        <div class="fs-name" id="finalName1"></div>
+        <div class="fs-pts" style="color:#e94560" id="finalScore1"></div>
+      </div>
+      <div class="final-score-card" id="finalCard2">
+        <div class="fs-name" id="finalName2"></div>
+        <div class="fs-pts" style="color:#4895ef" id="finalScore2"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button id="rematchBtn">🔁 Rematch</button>
+      <button id="newGameBtn">🏠 New Game</button>
+    </div>
+  </div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────
+  let DOTS = 6;
+  const CELL = 80;
+  const PAD  = 40;
+  const DOT_R = 6;
+  const SNAP  = 18;
+
+  // ── STATE ───────────────────────────────────────────────
+  let p1, p2, bonusRule, currentPlayer;
+  let hLines, vLines, boxes, scores;
+
+  // ── ELEMENTS ────────────────────────────────────────────
+  const setupEl  = document.getElementById('setup');
+  const gameEl   = document.getElementById('game');
+  const resultEl = document.getElementById('result');
+  const canvas   = document.getElementById('gameCanvas');
+  const ctx      = canvas.getContext('2d');
+
+  const card1    = document.getElementById('card1');
+  const card2    = document.getElementById('card2');
+  const turnInd  = document.getElementById('turnIndicator');
+  const score1El = document.getElementById('score1');
+  const score2El = document.getElementById('score2');
+  const name1El  = document.getElementById('nameDisplay1');
+  const name2El  = document.getElementById('nameDisplay2');
+
+  // ── SIZE CARD CLICKS ────────────────────────────────────
+  document.querySelectorAll('.size-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.size-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  });
+
+  // ── START GAME ──────────────────────────────────────────
+  document.getElementById('startBtn').addEventListener('click', () => {
+    const p1input = document.getElementById('p1name').value.trim();
+    const p2input = document.getElementById('p2name').value.trim();
+    p1 = p1input || 'Player 1';
+    p2 = p2input || 'Player 2';
+    bonusRule = document.getElementById('bonusTurn').checked;
+
+    name1El.textContent = p1;
+    name2El.textContent = p2;
+
+    initGame();
+
+    setupEl.style.display  = 'none';
+    resultEl.style.display = 'none';
+    gameEl.style.display   = 'flex';
+  });
+
+  function initGame() {
+    DOTS = parseInt(document.querySelector('.size-card.selected').dataset.dots);
+    currentPlayer = 1;
+
+    hLines = Array.from({length: DOTS}, () => Array(DOTS - 1).fill(0));
+    vLines = Array.from({length: DOTS - 1}, () => Array(DOTS).fill(0));
+    boxes  = Array.from({length: DOTS - 1}, () => Array(DOTS - 1).fill(0));
+
+    scores = [0, 0];
+    score1El.textContent = '0';
+    score2El.textContent = '0';
+
+    const size = (DOTS - 1) * CELL + PAD * 2;
+    canvas.width  = size;
+    canvas.height = size;
+
+    updateTurnIndicator();
+    draw();
+  }
+
+  // ── DRAWING ─────────────────────────────────────────────
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        if (boxes[r][c] !== 0) {
+          const x = PAD + c * CELL;
+          const y = PAD + r * CELL;
+          ctx.fillStyle = boxes[r][c] === 1 ? 'rgba(233,69,96,0.25)' : 'rgba(72,149,239,0.25)';
+          ctx.fillRect(x, y, CELL, CELL);
+
+          ctx.fillStyle = boxes[r][c] === 1 ? '#e94560' : '#4895ef';
+          ctx.font = 'bold 22px Segoe UI';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const initial = boxes[r][c] === 1
+            ? p1.charAt(0).toUpperCase()
+            : p2.charAt(0).toUpperCase();
+          ctx.fillText(initial, x + CELL / 2, y + CELL / 2);
+        }
+      }
+    }
+
+    for (let r = 0; r < DOTS; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        const x1 = PAD + c * CELL;
+        const y1 = PAD + r * CELL;
+        const x2 = x1 + CELL;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y1);
+        if (hLines[r][c]) {
+          ctx.strokeStyle = hLines[r][c] === 1 ? '#e94560' : '#4895ef';
+          ctx.lineWidth = 4;
+        } else {
+          ctx.strokeStyle = '#333355';
+          ctx.lineWidth = 2;
+        }
+        ctx.stroke();
+      }
+    }
+
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS; c++) {
+        const x1 = PAD + c * CELL;
+        const y1 = PAD + r * CELL;
+        const y2 = y1 + CELL;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1, y2);
+        if (vLines[r][c]) {
+          ctx.strokeStyle = vLines[r][c] === 1 ? '#e94560' : '#4895ef';
+          ctx.lineWidth = 4;
+        } else {
+          ctx.strokeStyle = '#333355';
+          ctx.lineWidth = 2;
+        }
+        ctx.stroke();
+      }
+    }
+
+    for (let r = 0; r < DOTS; r++) {
+      for (let c = 0; c < DOTS; c++) {
+        ctx.beginPath();
+        ctx.arc(PAD + c * CELL, PAD + r * CELL, DOT_R, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+    }
+  }
+
+  // ── CLICK HANDLING ──────────────────────────────────────
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    for (let r = 0; r < DOTS; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        if (hLines[r][c]) continue;
+        const x = PAD + c * CELL + CELL / 2;
+        const y = PAD + r * CELL;
+        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
+          playLine('h', r, c);
+          return;
+        }
+      }
+    }
+
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS; c++) {
+        if (vLines[r][c]) continue;
+        const x = PAD + c * CELL;
+        const y = PAD + r * CELL + CELL / 2;
+        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
+          playLine('v', r, c);
+          return;
+        }
+      }
+    }
+  });
+
+  // ── GAME LOGIC ──────────────────────────────────────────
+  function playLine(type, r, c) {
+    if (type === 'h') hLines[r][c] = currentPlayer;
+    else              vLines[r][c] = currentPlayer;
+
+    const claimed = checkBoxes();
+
+    if (claimed > 0) {
+      scores[currentPlayer - 1] += claimed;
+      score1El.textContent = scores[0];
+      score2El.textContent = scores[1];
+
+      if (isGameOver()) { draw(); showResult(); return; }
+
+      if (bonusRule) {
+        draw();
+        updateTurnIndicator();
+        return;
+      }
+    }
+
+    if (!isGameOver()) {
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      updateTurnIndicator();
+    } else {
+      draw();
+      showResult();
+      return;
+    }
+
+    draw();
+  }
+
+  function checkBoxes() {
+    let newlyClaimed = 0;
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        if (boxes[r][c] !== 0) continue;
+        const top    = hLines[r][c];
+        const bottom = hLines[r + 1][c];
+        const left   = vLines[r][c];
+        const right  = vLines[r][c + 1];
+        if (top && bottom && left && right) {
+          boxes[r][c] = currentPlayer;
+          newlyClaimed++;
+        }
+      }
+    }
+    return newlyClaimed;
+  }
+
+  function isGameOver() {
+    return boxes.every(row => row.every(cell => cell !== 0));
+  }
+
+  function updateTurnIndicator() {
+    const name = currentPlayer === 1 ? p1 : p2;
+    turnInd.textContent = `${name}'s turn`;
+    card1.classList.toggle('active', currentPlayer === 1);
+    card1.classList.toggle('inactive', currentPlayer !== 1);
+    card2.classList.toggle('active', currentPlayer === 2);
+    card2.classList.toggle('inactive', currentPlayer !== 2);
+  }
+
+  function showResult() {
+    gameEl.style.display   = 'none';
+    resultEl.style.display = 'flex';
+
+    const [s1, s2] = scores;
+
+    document.getElementById('finalName1').textContent  = p1;
+    document.getElementById('finalName2').textContent  = p2;
+    document.getElementById('finalScore1').textContent = s1;
+    document.getElementById('finalScore2').textContent = s2;
+
+    const title = document.getElementById('resultTitle');
+    if (s1 > s2) {
+      title.textContent = `${p1} Wins!`;
+      document.getElementById('finalCard1').classList.add('winner-card');
+      document.getElementById('finalCard2').classList.remove('winner-card');
+      launchConfetti();
+    } else if (s2 > s1) {
+      title.textContent = `${p2} Wins!`;
+      document.getElementById('finalCard2').classList.add('winner-card');
+      document.getElementById('finalCard1').classList.remove('winner-card');
+      launchConfetti();
+    } else {
+      title.textContent = "It's a Tie!";
+      document.getElementById('finalCard1').classList.remove('winner-card');
+      document.getElementById('finalCard2').classList.remove('winner-card');
+    }
+  }
+
+  function launchConfetti() {
+    const colors = ['#e94560','#4895ef','#ffd700','#ff6b6b','#51cf66','#fff'];
+    for (let i = 0; i < 120; i++) {
+      const piece = document.createElement('div');
+      piece.classList.add('confetti-piece');
+      piece.style.left             = Math.random() * 100 + 'vw';
+      piece.style.background       = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      piece.style.animationDelay   = (Math.random() * 2) + 's';
+      piece.style.width            = (Math.random() * 8 + 6) + 'px';
+      piece.style.height           = (Math.random() * 10 + 8) + 'px';
+      piece.style.borderRadius     = Math.random() > 0.5 ? '50%' : '2px';
+      document.body.appendChild(piece);
+      piece.addEventListener('animationend', () => piece.remove());
+    }
+  }
+
+  document.getElementById('rematchBtn').addEventListener('click', () => {
+    resultEl.style.display = 'none';
+    initGame();
+    gameEl.style.display = 'flex';
+  });
+
+  document.getElementById('newGameBtn').addEventListener('click', () => {
+    resultEl.style.display = 'none';
+    setupEl.style.display  = 'flex';
+  });
+</script>
+</body>
+</html>
