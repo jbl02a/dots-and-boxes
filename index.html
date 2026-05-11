@@ -226,10 +226,23 @@
 .score-card .pts { font-size: 1.8rem; font-weight: bold; color: #e94560; }
 .score-card .record { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
 
-    #turnIndicator {
-      font-size: 1rem;
-      color: #aaa;
-    }
+   #turnIndicator {
+  font-size: 1rem;
+  color: #aaa;
+}
+
+#muteBtn {
+  background: none;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #aaa;
+  transition: border-color 0.2s;
+}
+
+#muteBtn:hover { border-color: #ffd700; }
 
     #gridContainer { position: relative; }
 
@@ -429,6 +442,7 @@
       </div>
     </div>
     <div id="turnIndicator">— waiting —</div>
+    <button id="muteBtn" onclick="toggleMute()">🔊</button>
     <div id="dotsQuip" style="
       min-height: 24px;
       font-size: 0.85rem;
@@ -491,7 +505,63 @@
   const name1El  = document.getElementById('nameDisplay1');
   const name2El  = document.getElementById('nameDisplay2');
 
- // ── HOW TO PLAY ─────────────────────────────────────────
+let isMuted = false;
+
+  function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+  }
+  
+  // ── SOUND EFFECTS ───────────────────────────────────────
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+ function playSound(type) {
+    if (isMuted) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    if (type === 'click') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    if (type === 'claim') {
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.2);
+        osc.start(audioCtx.currentTime + i * 0.1);
+        osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
+      });
+    }
+
+    if (type === 'win') {
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.15 + 0.3);
+        osc.start(audioCtx.currentTime + i * 0.15);
+        osc.stop(audioCtx.currentTime + i * 0.15 + 0.3);
+      });
+    }
+  }
+
+  // ── HOW TO PLAY ─────────────────────────────────────────
   function toggleHowToPlay() {
     const content = document.getElementById('howToPlayContent');
     const btn = document.getElementById('howToPlayBtn');
@@ -822,6 +892,7 @@ canvas.addEventListener('click', (e) => {
   function playLine(type, r, c) {
     if (type === 'h') hLines[r][c] = currentPlayer;
     else              vLines[r][c] = currentPlayer;
+    playSound('click');
 
     const claimed = checkBoxes();
 
@@ -1049,10 +1120,11 @@ function checkBoxes() {
         const left   = vLines[r][c];
         const right  = vLines[r][c + 1];
         if (top && bottom && left && right) {
-          boxes[r][c] = currentPlayer;
+         boxes[r][c] = currentPlayer;
           newlyClaimed++;
           animatingBoxes.push({ r, c, player: currentPlayer, start: performance.now() });
           requestAnimationFrame(animateBoxes);
+          playSound('claim');
         }
       }
     }
@@ -1089,7 +1161,8 @@ function checkBoxes() {
       document.getElementById('finalCard1').classList.add('winner-card');
       document.getElementById('finalCard2').classList.remove('winner-card');
       record.p1wins++;
-      if (vsComputer) showDotsQuip('lose');
+     if (vsComputer) showDotsQuip('lose');
+      playSound('win');
       launchConfetti();
     } else if (s2 > s1) {
       title.textContent = `${p2} Wins!`;
@@ -1097,6 +1170,7 @@ function checkBoxes() {
       document.getElementById('finalCard1').classList.remove('winner-card');
       record.p2wins++;
       if (vsComputer) showDotsQuip('win');
+      playSound('win');
       launchConfetti();
     } else {
       title.textContent = "It's a Tie!";
