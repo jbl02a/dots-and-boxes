@@ -668,6 +668,7 @@ canvas.addEventListener('click', (e) => {
       scores[currentPlayer - 1] += claimed;
       score1El.textContent = scores[0];
       score2El.textContent = scores[1];
+      if (vsComputer && currentPlayer === 1) dotsConsecutive = 0;
 
       if (isGameOver()) { draw(); showResult(); return; }
 
@@ -764,13 +765,9 @@ function doComputerMove() {
   playLine(move.type, move.r, move.c);
 
   if (vsComputer) {
-    if (willClaim) {
-      dotsConsecutive++;
+   if (willClaim) {
       if (!dotsFirstBlood) {
         dotsFirstBlood = true;
-        showDotsQuip('claim');
-      } else if (dotsConsecutive >= 3) {
-        dotsConsecutive = 0;
         showDotsQuip('claim');
       } else if (Math.random() < 0.25) {
         showDotsQuip('claim');
