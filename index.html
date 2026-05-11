@@ -357,6 +357,16 @@
       </div>
     </div>
     <div id="turnIndicator">— waiting —</div>
+    <div id="dotsQuip" style="
+      min-height: 24px;
+      font-size: 0.85rem;
+      color: #ffd700;
+      font-style: italic;
+      text-align: center;
+      max-width: 400px;
+      opacity: 0;
+      transition: opacity 0.4s;
+    "></div>
     <div id="gridContainer">
       <canvas id="gameCanvas"></canvas>
     </div>
@@ -691,13 +701,87 @@ canvas.addEventListener('click', (e) => {
   if (animatingBoxes.length > 0) requestAnimationFrame(animateBoxes);
 }
 
+const dotsQuips = {
+  claim: [
+    "That box is MINE. 🤖",
+    "Calculating... yes, that's mine now.",
+    "D.O.T.S. claims another victim.",
+    "Too easy. Almost feel bad. Almost.",
+    "Beep boop. Box acquired.",
+    "My circuits are tingling with joy.",
+    "Did you see that coming? I did. Obviously.",
+  ],
+  move: [
+    "Interesting move. Wrong, but interesting.",
+    "I've already calculated your next 47 moves.",
+    "Take your time. I'll wait. I'm a computer.",
+    "My grandmother could play faster. I don't have a grandmother.",
+    "Plotting... always plotting. 🤖",
+    "You sure about that?",
+    "Noted. Countermeasures deployed.",
+  ],
+  win: [
+    "D.O.T.S. wins. As predicted. As always.",
+    "Better luck next time. My odds say you'll need it.",
+    "I felt nothing. That's a lie. I felt everything.",
+    "Resistance was futile. It usually is.",
+    "Rematch? I'll try to lose more slowly this time.",
+  ],
+  lose: [
+    "I let you win. Obviously.",
+    "A glitch. Definitely a glitch.",
+    "This has been logged as an anomaly.",
+    "Impossible. Recalculating entire existence.",
+    "You got lucky. My revenge will be calculated.",
+  ]
+};
+
+let lastQuip = '';
+let dotsFirstBlood = false;
+let dotsConsecutive = 0;
+
+function showDotsQuip(category) {
+  const pool = dotsQuips[category].filter(q => q !== lastQuip);
+  const quip = pool[Math.floor(Math.random() * pool.length)];
+  lastQuip = quip;
+  const el = document.getElementById('dotsQuip');
+  el.textContent = quip;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+function clearDotsQuip() {
+  document.getElementById('dotsQuip').style.opacity = '0';
+}
+
 function doComputerMove() {
   if (isGameOver()) return;
 
   const move = getBestMove();
   if (!move) return;
 
+  const willClaim = moveCompletesBox(move.type, move.r, move.c);
   playLine(move.type, move.r, move.c);
+
+  if (vsComputer) {
+    if (willClaim) {
+      dotsConsecutive++;
+      if (!dotsFirstBlood) {
+        dotsFirstBlood = true;
+        showDotsQuip('claim');
+      } else if (dotsConsecutive >= 3) {
+        dotsConsecutive = 0;
+        showDotsQuip('claim');
+      } else if (Math.random() < 0.25) {
+        showDotsQuip('claim');
+      }
+    } else {
+      dotsConsecutive = 0;
+      if (Math.random() < 0.12) {
+        showDotsQuip('move');
+      }
+    }
+  }
 }
 
 function getAllAvailableMoves() {
@@ -847,12 +931,14 @@ function checkBoxes() {
       document.getElementById('finalCard1').classList.add('winner-card');
       document.getElementById('finalCard2').classList.remove('winner-card');
       record.p1wins++;
+      if (vsComputer) showDotsQuip('lose');
       launchConfetti();
     } else if (s2 > s1) {
       title.textContent = `${p2} Wins!`;
       document.getElementById('finalCard2').classList.add('winner-card');
       document.getElementById('finalCard1').classList.remove('winner-card');
       record.p2wins++;
+      if (vsComputer) showDotsQuip('win');
       launchConfetti();
     } else {
       title.textContent = "It's a Tie!";
@@ -885,6 +971,8 @@ function checkBoxes() {
   document.getElementById('rematchBtn').addEventListener('click', () => {
     resultEl.style.display = 'none';
     initGame();
+    dotsFirstBlood = false;
+    dotsConsecutive = 0;
     gameEl.style.display = 'flex';
   });
 
