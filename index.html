@@ -77,6 +77,24 @@
       background: rgba(255,215,0,0.1);
     }
 
+    .opp-card, .diff-card {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 2px solid #333;
+  background: #0f3460;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.opp-card:hover, .diff-card:hover { border-color: #4895ef; }
+
+.opp-card.selected, .diff-card.selected {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.1);
+}
+    
     .size-label {
       font-weight: bold;
       font-size: 0.95rem;
@@ -262,7 +280,7 @@
       <label>Player 1 Name</label>
       <input type="text" id="p1name" placeholder="Enter name..." maxlength="12">
     </div>
-    <div>
+    <div id="p2nameRow">
       <label>Player 2 Name</label>
       <input type="text" id="p2name" placeholder="Enter name..." maxlength="12">
     </div>
@@ -280,6 +298,36 @@
         <div class="size-card" data-dots="7">
           <div class="size-label">Large</div>
           <div class="size-sub">6×6 boxes · 36 total</div>
+        </div>
+      </div>
+    </div>
+   <div>
+      <label>Opponent</label>
+      <div class="size-options">
+        <div class="opp-card selected" data-opp="human">
+          <div class="size-label">👤 Human</div>
+          <div class="size-sub">Two players, one device</div>
+        </div>
+        <div class="opp-card" data-opp="computer">
+          <div class="size-label">🤖 Computer</div>
+          <div class="size-sub">Play solo vs AI</div>
+        </div>
+      </div>
+    </div>
+    <div id="difficultyRow" style="display:none">
+      <label>Difficulty</label>
+      <div class="size-options">
+        <div class="diff-card" data-diff="easy">
+          <div class="size-label">Easy</div>
+          <div class="size-sub">Plays randomly</div>
+        </div>
+        <div class="diff-card selected" data-diff="medium">
+          <div class="size-label">Medium</div>
+          <div class="size-sub">Grabs open boxes</div>
+        </div>
+        <div class="diff-card" data-diff="hard">
+          <div class="size-label">Hard</div>
+          <div class="size-sub">Thinks ahead</div>
         </div>
       </div>
     </div>
@@ -340,7 +388,7 @@
 
   // ── STATE ───────────────────────────────────────────────
   let p1, p2, bonusRule, currentPlayer;
- let hLines, vLines, boxes, scores, animatingBoxes, record;
+ let hLines, vLines, boxes, scores, animatingBoxes, record, vsComputer, difficulty;
 
   // ── ELEMENTS ────────────────────────────────────────────
   const setupEl  = document.getElementById('setup');
@@ -365,6 +413,24 @@
     });
   });
 
+document.querySelectorAll('.opp-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.opp-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    document.getElementById('difficultyRow').style.display =
+      card.dataset.opp === 'computer' ? 'block' : 'none';
+    document.getElementById('p2nameRow').style.display =
+      card.dataset.opp === 'computer' ? 'none' : 'block';
+  });
+});
+
+document.querySelectorAll('.diff-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
   // ── START GAME ──────────────────────────────────────────
   document.getElementById('startBtn').addEventListener('click', () => {
     const p1input = document.getElementById('p1name').value.trim();
@@ -373,9 +439,12 @@
     p2 = p2input || 'Player 2';
     bonusRule = document.getElementById('bonusTurn').checked;
 
-    name1El.textContent = p1;
-    name2El.textContent = p2;
+    vsComputer = document.querySelector('.opp-card.selected').dataset.opp === 'computer';
+    difficulty = document.querySelector('.diff-card.selected').dataset.diff;
+    if (vsComputer) p2 = 'D.O.T.S.';
     record = { p1wins: 0, p2wins: 0, ties: 0 };
+    name1El.textContent = p1;
+    name2El.textContent = vsComputer ? '🤖 D.O.T.S.' : p2;
 
     initGame();
 
@@ -598,6 +667,9 @@ canvas.addEventListener('click', (e) => {
     if (!isGameOver()) {
       currentPlayer = currentPlayer === 1 ? 2 : 1;
       updateTurnIndicator();
+      if (vsComputer && currentPlayer === 2) {
+        setTimeout(doComputerMove, 500);
+      }
     } else {
       draw();
       showResult();
@@ -615,7 +687,113 @@ canvas.addEventListener('click', (e) => {
   if (animatingBoxes.length > 0) requestAnimationFrame(animateBoxes);
 }
 
-  function checkBoxes() {
+function doComputerMove() {
+  if (isGameOver()) return;
+
+  const move = getBestMove();
+  if (!move) return;
+
+  playLine(move.type, move.r, move.c);
+}
+
+function getAllAvailableMoves() {
+  const moves = [];
+  for (let r = 0; r < DOTS; r++)
+    for (let c = 0; c < DOTS - 1; c++)
+      if (!hLines[r][c]) moves.push({ type: 'h', r, c });
+  for (let r = 0; r < DOTS - 1; r++)
+    for (let c = 0; c < DOTS; c++)
+      if (!vLines[r][c]) moves.push({ type: 'v', r, c });
+  return moves;
+}
+
+function countSidesOfBox(r, c) {
+  let sides = 0;
+  if (hLines[r][c])     sides++;
+  if (hLines[r+1][c])   sides++;
+  if (vLines[r][c])     sides++;
+  if (vLines[r][c+1])   sides++;
+  return sides;
+}
+
+function moveCompletesBox(type, r, c) {
+  // Temporarily apply the move and check if any box gets completed
+  if (type === 'h') hLines[r][c] = 2;
+  else              vLines[r][c] = 2;
+
+  let completes = false;
+  if (type === 'h') {
+    if (r > 0 && countSidesOfBox(r-1, c) === 4) completes = true;
+    if (r < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
+  } else {
+    if (c > 0 && countSidesOfBox(r, c-1) === 4) completes = true;
+    if (c < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
+  }
+
+  // Undo the temporary move
+  if (type === 'h') hLines[r][c] = 0;
+  else              vLines[r][c] = 0;
+
+  return completes;
+}
+
+function moveGivesOpponentBox(type, r, c) {
+  // After this move, would any box have exactly 3 sides?
+  if (type === 'h') hLines[r][c] = 2;
+  else              vLines[r][c] = 2;
+
+  let givesBox = false;
+  if (type === 'h') {
+    if (r > 0 && countSidesOfBox(r-1, c) === 3) givesBox = true;
+    if (r < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
+  } else {
+    if (c > 0 && countSidesOfBox(r, c-1) === 3) givesBox = true;
+    if (c < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
+  }
+
+  if (type === 'h') hLines[r][c] = 0;
+  else              vLines[r][c] = 0;
+
+  return givesBox;
+}
+
+function getBestMove() {
+  const moves = getAllAvailableMoves();
+  if (moves.length === 0) return null;
+
+  // EASY — pure random
+  if (difficulty === 'easy') {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  // MEDIUM — take a completing move if available, else random
+  if (difficulty === 'medium') {
+    const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
+    if (winning.length > 0)
+      return winning[Math.floor(Math.random() * winning.length)];
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  // HARD — take completing move, avoid giving opponent boxes, else random
+  if (difficulty === 'hard') {
+    // First priority: complete a box
+    const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
+    if (winning.length > 0)
+      return winning[Math.floor(Math.random() * winning.length)];
+
+    // Second priority: avoid giving opponent a box
+    const safe = moves.filter(m => !moveGivesOpponentBox(m.type, m.r, m.c));
+    if (safe.length > 0)
+      return safe[Math.floor(Math.random() * safe.length)];
+
+    // No safe moves — pick the least damaging (move that creates fewest 3-sided boxes)
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  return moves[Math.floor(Math.random() * moves.length)];
+}  
+
+function checkBoxes() {
     let newlyClaimed = 0;
     for (let r = 0; r < DOTS - 1; r++) {
       for (let c = 0; c < DOTS - 1; c++) {
