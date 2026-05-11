@@ -141,6 +141,64 @@
     }
 
     #startBtn:hover { background: #c73652; }
+    #howToPlay {
+  margin-top: 4px;
+}
+
+#howToPlayBtn {
+  background: none;
+  border: 1px solid #333;
+  color: #aaa;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  width: 100%;
+  text-align: left;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#howToPlayBtn:hover {
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+#howToPlayContent {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#howToPlayContent ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#howToPlayContent ul li {
+  font-size: 0.85rem;
+  color: #ccc;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.4;
+}
+
+#howToPlayContent ul li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #ffd700;
+}
+
+#demoCanvas {
+  border-radius: 8px;
+  background: #0f3460;
+}
 
     #game { display: none; flex-direction: column; align-items: center; gap: 20px; }
 
@@ -340,6 +398,20 @@
       <span><strong>Bonus Turn Rule:</strong> If you complete a box, you get an extra turn. Rewards skill and chain reactions — recommended for competitive play.</span>
     </div>
     <button id="startBtn">Start Game</button>
+  <div id="howToPlay">
+      <button id="howToPlayBtn" onclick="toggleHowToPlay()">
+        ▶ How to Play
+      </button>
+      <div id="howToPlayContent" style="display:none">
+        <canvas id="demoCanvas" width="200" height="200"></canvas>
+        <ul>
+          <li>Take turns drawing a line between two adjacent dots</li>
+          <li>Complete the 4th side of a box to claim it — your initial appears inside</li>
+          <li>The player with the most boxes when the grid is full wins</li>
+          <li>Optional: enable the Bonus Turn rule to go again after claiming a box</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- GAME SCREEN -->
@@ -419,6 +491,95 @@
   const name1El  = document.getElementById('nameDisplay1');
   const name2El  = document.getElementById('nameDisplay2');
 
+ // ── HOW TO PLAY ─────────────────────────────────────────
+  function toggleHowToPlay() {
+    const content = document.getElementById('howToPlayContent');
+    const btn = document.getElementById('howToPlayBtn');
+    const isOpen = content.style.display !== 'none';
+    content.style.display = isOpen ? 'none' : 'flex';
+    btn.textContent = isOpen ? '▶ How to Play' : '▼ How to Play';
+    if (!isOpen) startDemo();
+  }
+
+  let demoInterval = null;
+
+  function startDemo() {
+    const dc = document.getElementById('demoCanvas');
+    if (!dc) return;
+    const dtx = dc.getContext('2d');
+    const step = 60;
+    const pad = 40;
+
+    const dots = [
+      [pad, pad], [pad + step, pad], [pad + step * 2, pad],
+      [pad, pad + step], [pad + step, pad + step], [pad + step * 2, pad + step],
+      [pad, pad + step * 2], [pad + step, pad + step * 2], [pad + step * 2, pad + step * 2]
+    ];
+
+    // The four sides of the center box drawn one at a time
+    const steps = [
+      { type: 'line', x1: pad, y1: pad, x2: pad + step, y2: pad, color: '#e94560' },
+      { type: 'line', x1: pad, y1: pad, x2: pad, y2: pad + step, color: '#4895ef' },
+      { type: 'line', x1: pad + step, y1: pad, x2: pad + step, y2: pad + step, color: '#e94560' },
+      { type: 'line', x1: pad, y1: pad + step, x2: pad + step, y2: pad + step, color: '#4895ef' },
+      { type: 'claim' }
+    ];
+
+    let currentStep = 0;
+    let drawnLines = [];
+
+    if (demoInterval) clearInterval(demoInterval);
+
+    function drawDemo() {
+      dtx.clearRect(0, 0, dc.width, dc.height);
+
+      // Draw claimed box flash
+      if (currentStep >= steps.length) {
+        dtx.fillStyle = 'rgba(233,69,96,0.3)';
+        dtx.fillRect(pad, pad, step, step);
+        dtx.fillStyle = '#e94560';
+        dtx.font = 'bold 22px Segoe UI';
+        dtx.textAlign = 'center';
+        dtx.textBaseline = 'middle';
+        dtx.fillText('J', pad + step / 2, pad + step / 2);
+      }
+
+      // Draw all lines so far
+      drawnLines.forEach(l => {
+        dtx.beginPath();
+        dtx.moveTo(l.x1, l.y1);
+        dtx.lineTo(l.x2, l.y2);
+        dtx.strokeStyle = l.color;
+        dtx.lineWidth = 3;
+        dtx.stroke();
+      });
+
+      // Draw all dots
+      dots.forEach(([x, y]) => {
+        dtx.beginPath();
+        dtx.arc(x, y, 5, 0, Math.PI * 2);
+        dtx.fillStyle = '#ffffff';
+        dtx.fill();
+      });
+    }
+
+    demoInterval = setInterval(() => {
+      if (currentStep < steps.length - 1) {
+        drawnLines.push(steps[currentStep]);
+        currentStep++;
+      } else if (currentStep === steps.length - 1) {
+        currentStep++;
+      } else {
+        // Reset and loop
+        currentStep = 0;
+        drawnLines = [];
+      }
+      drawDemo();
+    }, 800);
+
+    drawDemo();
+  }
+  
   // ── SIZE CARD CLICKS ────────────────────────────────────
   document.querySelectorAll('.size-card').forEach(card => {
     card.addEventListener('click', () => {
