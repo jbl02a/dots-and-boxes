@@ -270,6 +270,26 @@
 
 #muteBtn:hover { border-color: #ffd700; }
 
+/* ── TURN TIMER ── */
+#timerDisplay {
+  font-size: 1.6rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  min-width: 48px;
+  text-align: center;
+  transition: color 0.3s;
+}
+
+@keyframes timerFlash {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.1; }
+  100% { opacity: 1; }
+}
+
+.timer-flash {
+  animation: timerFlash 0.25s ease-in-out infinite;
+}
+
     #gridContainer { position: relative; }
 
     canvas {
@@ -456,6 +476,10 @@
       <input type="checkbox" id="bonusTurn">
       <span><strong>Bonus Turn Rule:</strong> If you complete a box, you get an extra turn. Rewards skill and chain reactions — recommended for competitive play.</span>
     </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="timedMode">
+      <span><strong>⏱️ Timed Mode:</strong> vs. Human = 10 seconds per turn. vs. D.O.T.S. = 5 seconds per turn. Run out of time? A random move is made for you — no mercy.</span>
+    </div>
     <button id="startBtn">Start Game</button>
   <div id="howToPlay">
       <button id="howToPlayBtn" onclick="toggleHowToPlay()">
@@ -488,6 +512,7 @@
       </div>
     </div>
     <div id="turnIndicator">— waiting —</div>
+    <div id="timerDisplay" style="display:none;">⏱️ 10</div>
     <button id="muteBtn" onclick="toggleMute()">🔊</button>
     <div id="dotsQuip" style="
       min-height: 24px;
@@ -534,7 +559,8 @@
 
   // ── STATE ───────────────────────────────────────────────
   let p1, p2, bonusRule, currentPlayer;
-  let p1color, p2color; // ← NEW: player colors
+  let p1color, p2color; // ← player colors
+  let timedMode, timerSeconds, timerInterval; // ← turn timer
   let hLines, vLines, boxes, scores, animatingBoxes, record, vsComputer, difficulty;
 
   // ── ELEMENTS ────────────────────────────────────────────
@@ -557,6 +583,63 @@ let isMuted = false;
   function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+  }
+
+  // ── TURN TIMER ───────────────────────────────────────────
+  const timerEl = document.getElementById('timerDisplay');
+
+  function startTimer() {
+    stopTimer();
+    if (!timedMode) return;
+    // vs Computer: 5 sec for human player only. vs Human: 10 sec always.
+    timerSeconds = vsComputer ? 5 : 10;
+    timerEl.style.display = 'block';
+    timerEl.classList.remove('timer-flash');
+    updateTimerDisplay();
+
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+
+      if (timerSeconds <= 0) {
+        stopTimer();
+        autoMove();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerEl.classList.remove('timer-flash');
+    timerEl.style.color = '#eee';
+  }
+
+  function hideTimer() {
+    stopTimer();
+    timerEl.style.display = 'none';
+  }
+
+  function updateTimerDisplay() {
+    timerEl.textContent = `⏱️ ${timerSeconds}`;
+    if (timerSeconds <= 2) {
+      timerEl.style.color = '#e94560';
+      timerEl.classList.add('timer-flash');
+    } else if (timerSeconds <= 3) {
+      timerEl.style.color = '#ff9f43';
+      timerEl.classList.remove('timer-flash');
+    } else {
+      timerEl.style.color = '#eee';
+      timerEl.classList.remove('timer-flash');
+    }
+  }
+
+  function autoMove() {
+    // Pick a random legal move for the current player
+    const moves = getAllAvailableMoves();
+    if (moves.length === 0) return;
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    playLine(move.type, move.r, move.c);
   }
   
   // ── SOUND EFFECTS ───────────────────────────────────────
@@ -745,6 +828,7 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
     p1 = p1input || 'Player 1';
     p2 = p2input || 'Player 2';
     bonusRule = document.getElementById('bonusTurn').checked;
+    timedMode = document.getElementById('timedMode').checked;
 
     // ── READ CHOSEN COLORS ──────────────────────────────────
     p1color = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
@@ -794,6 +878,8 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
     scores = [0, 0];
     score1El.textContent = '0';
     score2El.textContent = '0';
+
+    if (!timedMode) hideTimer();
 
     const size = (DOTS - 1) * CELL + PAD * 2;
     canvas.width  = size;
@@ -978,6 +1064,7 @@ canvas.addEventListener('click', (e) => {
 
   // ── GAME LOGIC ──────────────────────────────────────────
   function playLine(type, r, c) {
+    stopTimer(); // stop timer the moment a move is made
     if (type === 'h') hLines[r][c] = currentPlayer;
     else              vLines[r][c] = currentPlayer;
     playSound('click');
@@ -1230,9 +1317,16 @@ function checkBoxes() {
     card1.classList.toggle('inactive', currentPlayer !== 1);
     card2.classList.toggle('active', currentPlayer === 2);
     card2.classList.toggle('inactive', currentPlayer !== 2);
+    // Start timer — but not during D.O.T.S.'s turn (computer handles its own timing)
+    if (vsComputer && currentPlayer === 2) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
   }
 
   function showResult() {
+    hideTimer();
     gameEl.style.display   = 'none';
     resultEl.style.display = 'flex';
 
