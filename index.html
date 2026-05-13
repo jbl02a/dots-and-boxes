@@ -7,6 +7,9 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── FIX 2: Prevent double-tap zoom on mobile ── */
+    * { touch-action: manipulation; }
+
     body {
       background: #1a1a2e;
       color: #eee;
@@ -78,23 +81,23 @@
     }
 
     .opp-card, .diff-card {
-  flex: 1;
-  padding: 10px 8px;
-  border-radius: 8px;
-  border: 2px solid #333;
-  background: #0f3460;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color 0.2s, background 0.2s;
-}
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #0f3460;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
 
-.opp-card:hover, .diff-card:hover { border-color: #4895ef; }
+    .opp-card:hover, .diff-card:hover { border-color: #4895ef; }
 
-.opp-card.selected, .diff-card.selected {
-  border-color: #ffd700;
-  background: rgba(255,215,0,0.1);
-}
-    
+    .opp-card.selected, .diff-card.selected {
+      border-color: #ffd700;
+      background: rgba(255,215,0,0.1);
+    }
+
     .size-label {
       font-weight: bold;
       font-size: 0.95rem;
@@ -144,9 +147,7 @@
       transition: border-color 0.15s, transform 0.15s;
     }
 
-    .color-swatch:hover {
-      transform: scale(1.15);
-    }
+    .color-swatch:hover { transform: scale(1.15); }
 
     .color-swatch.selected {
       border-color: #ffd700;
@@ -167,64 +168,63 @@
     }
 
     #startBtn:hover { background: #c73652; }
-    #howToPlay {
-  margin-top: 4px;
-}
 
-#howToPlayBtn {
-  background: none;
-  border: 1px solid #333;
-  color: #aaa;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.88rem;
-  width: 100%;
-  text-align: left;
-  transition: border-color 0.2s, color 0.2s;
-}
+    #howToPlay { margin-top: 4px; }
 
-#howToPlayBtn:hover {
-  border-color: #ffd700;
-  color: #ffd700;
-}
+    #howToPlayBtn {
+      background: none;
+      border: 1px solid #333;
+      color: #aaa;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      width: 100%;
+      text-align: left;
+      transition: border-color 0.2s, color 0.2s;
+    }
 
-#howToPlayContent {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
+    #howToPlayBtn:hover {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
 
-#howToPlayContent ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+    #howToPlayContent {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
 
-#howToPlayContent ul li {
-  font-size: 0.85rem;
-  color: #ccc;
-  padding-left: 20px;
-  position: relative;
-  line-height: 1.4;
-}
+    #howToPlayContent ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-#howToPlayContent ul li::before {
-  content: '▸';
-  position: absolute;
-  left: 0;
-  color: #ffd700;
-}
+    #howToPlayContent ul li {
+      font-size: 0.85rem;
+      color: #ccc;
+      padding-left: 20px;
+      position: relative;
+      line-height: 1.4;
+    }
 
-#demoCanvas {
-  border-radius: 8px;
-  background: #0f3460;
-}
+    #howToPlayContent ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #ffd700;
+    }
+
+    #demoCanvas {
+      border-radius: 8px;
+      background: #0f3460;
+    }
 
     #game { display: none; flex-direction: column; align-items: center; gap: 20px; }
 
@@ -249,52 +249,72 @@
     .score-card.inactive { opacity: 0.5; }
 
     .score-card .name { font-weight: bold; font-size: 1rem; }
-.score-card .pts { font-size: 1.8rem; font-weight: bold; color: #e94560; }
-.score-card .record { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
+    .score-card .pts { font-size: 1.8rem; font-weight: bold; color: #e94560; }
+    .score-card .record { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
 
-   #turnIndicator {
-  font-size: 1rem;
-  color: #aaa;
-}
+    /* ── FIX 4: Score pop animation ── */
+    @keyframes scorePop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.45); }
+      70%  { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+    .score-pop {
+      animation: scorePop 0.35s ease-out;
+    }
 
-#muteBtn {
-  background: none;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-size: 1rem;
-  color: #aaa;
-  transition: border-color 0.2s;
-}
+    #turnIndicator {
+      font-size: 1rem;
+      color: #aaa;
+    }
 
-#muteBtn:hover { border-color: #ffd700; }
+    #muteBtn {
+      background: none;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #aaa;
+      transition: border-color 0.2s;
+    }
 
-/* ── TURN TIMER ── */
-#timerDisplay {
-  font-size: 1.6rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  min-width: 48px;
-  text-align: center;
-  transition: color 0.3s;
-}
+    #muteBtn:hover { border-color: #ffd700; }
 
-@keyframes timerFlash {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.1; }
-  100% { opacity: 1; }
-}
+    /* ── TURN TIMER ── */
+    #timerDisplay {
+      font-size: 1.6rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      min-width: 48px;
+      text-align: center;
+      transition: color 0.3s;
+    }
 
-.timer-flash {
-  animation: timerFlash 0.25s ease-in-out infinite;
-}
+    @keyframes timerFlash {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.1; }
+      100% { opacity: 1; }
+    }
 
-    #gridContainer { position: relative; }
+    .timer-flash {
+      animation: timerFlash 0.25s ease-in-out infinite;
+    }
+
+    /* ── FIX 1: Canvas scaling — gridContainer constrains the canvas ── */
+    #gridContainer {
+      position: relative;
+      width: 100%;
+      max-width: min(95vw, 600px);
+      overflow: hidden;
+    }
 
     canvas {
       display: block;
       cursor: pointer;
+      /* Scale canvas down to fit container width while keeping aspect ratio */
+      max-width: 100%;
+      height: auto;
     }
 
     #result {
@@ -396,7 +416,6 @@
     <div>
       <label>Player 1 Name</label>
       <input type="text" id="p1name" placeholder="Enter name..." maxlength="12">
-      <!-- COLOR PICKER: Player 1 color swatches -->
       <label style="margin-top:10px;">Player 1 Color</label>
       <div class="color-swatches" id="p1swatches">
         <div class="color-swatch selected" data-color="#e94560" style="background:#e94560;"></div>
@@ -410,7 +429,6 @@
     <div id="p2nameRow">
       <label>Player 2 Name</label>
       <input type="text" id="p2name" placeholder="Enter name..." maxlength="12">
-      <!-- COLOR PICKER: Player 2 color swatches -->
       <label style="margin-top:10px;">Player 2 Color</label>
       <div class="color-swatches" id="p2swatches">
         <div class="color-swatch" data-color="#e94560" style="background:#e94560;"></div>
@@ -442,7 +460,7 @@
         </div>
       </div>
     </div>
-   <div>
+    <div>
       <label>Opponent</label>
       <div class="size-options">
         <div class="opp-card selected" data-opp="human">
@@ -481,7 +499,7 @@
       <span><strong>⏱️ Timed Mode:</strong> vs. Human = 10 seconds per turn. vs. D.O.T.S. = 5 seconds per turn. Run out of time? A random move is made for you — no mercy.</span>
     </div>
     <button id="startBtn">Start Game</button>
-  <div id="howToPlay">
+    <div id="howToPlay">
       <button id="howToPlayBtn" onclick="toggleHowToPlay()">
         ▶ How to Play
       </button>
@@ -559,8 +577,8 @@
 
   // ── STATE ───────────────────────────────────────────────
   let p1, p2, bonusRule, currentPlayer;
-  let p1color, p2color; // ← player colors
-  let timedMode, timerSeconds, timerInterval; // ← turn timer
+  let p1color, p2color;
+  let timedMode, timerSeconds, timerInterval;
   let hLines, vLines, boxes, scores, animatingBoxes, record, vsComputer, difficulty;
 
   // ── ELEMENTS ────────────────────────────────────────────
@@ -578,12 +596,27 @@
   const name1El  = document.getElementById('nameDisplay1');
   const name2El  = document.getElementById('nameDisplay2');
 
-let isMuted = false;
+  let isMuted = false;
 
   function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
   }
+
+  // ── FIX 3: iOS Audio — resume AudioContext on first user touch anywhere ──
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function unlockAudio() {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('touchend', unlockAudio);
+    document.removeEventListener('click', unlockAudio);
+  }
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('touchend',   unlockAudio, { once: true });
+  document.addEventListener('click',      unlockAudio, { once: true });
 
   // ── TURN TIMER ───────────────────────────────────────────
   const timerEl = document.getElementById('timerDisplay');
@@ -591,7 +624,6 @@ let isMuted = false;
   function startTimer() {
     stopTimer();
     if (!timedMode) return;
-    // vs Computer: 5 sec for human player only. vs Human: 10 sec always.
     timerSeconds = vsComputer ? 5 : 10;
     timerEl.style.display = 'block';
     timerEl.classList.remove('timer-flash');
@@ -600,7 +632,6 @@ let isMuted = false;
     timerInterval = setInterval(() => {
       timerSeconds--;
       updateTimerDisplay();
-
       if (timerSeconds <= 0) {
         stopTimer();
         autoMove();
@@ -635,17 +666,14 @@ let isMuted = false;
   }
 
   function autoMove() {
-    // Pick a random legal move for the current player
     const moves = getAllAvailableMoves();
     if (moves.length === 0) return;
     const move = moves[Math.floor(Math.random() * moves.length)];
     playLine(move.type, move.r, move.c);
   }
-  
-  // ── SOUND EFFECTS ───────────────────────────────────────
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
- function playSound(type) {
+  // ── SOUND EFFECTS ───────────────────────────────────────
+  function playSound(type) {
     if (isMuted) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -716,7 +744,6 @@ let isMuted = false;
       [pad, pad + step * 2], [pad + step, pad + step * 2], [pad + step * 2, pad + step * 2]
     ];
 
-    // The four sides of the center box drawn one at a time
     const steps = [
       { type: 'line', x1: pad, y1: pad, x2: pad + step, y2: pad, color: '#e94560' },
       { type: 'line', x1: pad, y1: pad, x2: pad, y2: pad + step, color: '#4895ef' },
@@ -733,7 +760,6 @@ let isMuted = false;
     function drawDemo() {
       dtx.clearRect(0, 0, dc.width, dc.height);
 
-      // Draw claimed box flash
       if (currentStep >= steps.length) {
         dtx.fillStyle = 'rgba(233,69,96,0.3)';
         dtx.fillRect(pad, pad, step, step);
@@ -744,7 +770,6 @@ let isMuted = false;
         dtx.fillText('J', pad + step / 2, pad + step / 2);
       }
 
-      // Draw all lines so far
       drawnLines.forEach(l => {
         dtx.beginPath();
         dtx.moveTo(l.x1, l.y1);
@@ -754,7 +779,6 @@ let isMuted = false;
         dtx.stroke();
       });
 
-      // Draw all dots
       dots.forEach(([x, y]) => {
         dtx.beginPath();
         dtx.arc(x, y, 5, 0, Math.PI * 2);
@@ -770,7 +794,6 @@ let isMuted = false;
       } else if (currentStep === steps.length - 1) {
         currentStep++;
       } else {
-        // Reset and loop
         currentStep = 0;
         drawnLines = [];
       }
@@ -779,7 +802,7 @@ let isMuted = false;
 
     drawDemo();
   }
-  
+
   // ── SIZE CARD CLICKS ────────────────────────────────────
   document.querySelectorAll('.size-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -788,38 +811,38 @@ let isMuted = false;
     });
   });
 
-document.querySelectorAll('.opp-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.opp-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('difficultyRow').style.display =
-      card.dataset.opp === 'computer' ? 'block' : 'none';
-    document.getElementById('p2nameRow').style.display =
-      card.dataset.opp === 'computer' ? 'none' : 'block';
+  document.querySelectorAll('.opp-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.opp-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      document.getElementById('difficultyRow').style.display =
+        card.dataset.opp === 'computer' ? 'block' : 'none';
+      document.getElementById('p2nameRow').style.display =
+        card.dataset.opp === 'computer' ? 'none' : 'block';
+    });
   });
-});
 
-document.querySelectorAll('.diff-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
+  document.querySelectorAll('.diff-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
   });
-});
 
-// ── COLOR SWATCH CLICKS ──────────────────────────────────
-document.querySelectorAll('#p1swatches .color-swatch').forEach(swatch => {
-  swatch.addEventListener('click', () => {
-    document.querySelectorAll('#p1swatches .color-swatch').forEach(s => s.classList.remove('selected'));
-    swatch.classList.add('selected');
+  // ── COLOR SWATCH CLICKS ──────────────────────────────────
+  document.querySelectorAll('#p1swatches .color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('#p1swatches .color-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+    });
   });
-});
 
-document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
-  swatch.addEventListener('click', () => {
-    document.querySelectorAll('#p2swatches .color-swatch').forEach(s => s.classList.remove('selected'));
-    swatch.classList.add('selected');
+  document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('#p2swatches .color-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+    });
   });
-});
 
   // ── START GAME ──────────────────────────────────────────
   document.getElementById('startBtn').addEventListener('click', () => {
@@ -830,11 +853,9 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
     bonusRule = document.getElementById('bonusTurn').checked;
     timedMode = document.getElementById('timedMode').checked;
 
-    // ── READ CHOSEN COLORS ──────────────────────────────────
     p1color = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
     p2color = document.querySelector('#p2swatches .color-swatch.selected').dataset.color;
 
-    // Apply colors as CSS variables so score card borders update automatically
     function hexToRgb(hex) {
       const r = parseInt(hex.slice(1,3),16);
       const g = parseInt(hex.slice(3,5),16);
@@ -846,7 +867,6 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
     document.documentElement.style.setProperty('--p2color-faint', `rgba(${hexToRgb(p2color)},0.3)`);
     document.documentElement.style.setProperty('--p2color-bg',    `rgba(${hexToRgb(p2color)},0.15)`);
 
-    // Apply score point colors in scoreboard
     document.getElementById('score1').style.color = p1color;
     document.getElementById('score2').style.color = p2color;
     document.getElementById('finalScore1').style.color = p1color;
@@ -866,6 +886,16 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
     gameEl.style.display   = 'flex';
   });
 
+  // ── FIX 1: Canvas scaling — compute CELL size to fit screen ──
+  function getCanvasCell() {
+    // Available width = screen width minus page padding (40px each side)
+    const availableWidth = Math.min(window.innerWidth - 40, 600);
+    const gridPixels = availableWidth - PAD * 2;
+    const boxes = DOTS - 1;
+    // Clamp so desktop stays at 80, mobile shrinks
+    return Math.min(80, Math.floor(gridPixels / boxes));
+  }
+
   function initGame() {
     DOTS = parseInt(document.querySelector('.size-card.selected').dataset.dots);
     currentPlayer = 1;
@@ -881,7 +911,9 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
 
     if (!timedMode) hideTimer();
 
-    const size = (DOTS - 1) * CELL + PAD * 2;
+    // Use responsive cell size
+    const CELL_NOW = getCanvasCell();
+    const size = (DOTS - 1) * CELL_NOW + PAD * 2;
     canvas.width  = size;
     canvas.height = size;
 
@@ -890,55 +922,62 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
   }
 
   // ── DRAWING ─────────────────────────────────────────────
+  // Always read actual canvas dimensions for responsive drawing
+  function getCellSize() {
+    return (canvas.width - PAD * 2) / (DOTS - 1);
+  }
+
   function draw() {
+    const CELL_NOW = getCellSize();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const now = performance.now();
     for (let r = 0; r < DOTS - 1; r++) {
       for (let c = 0; c < DOTS - 1; c++) {
         if (boxes[r][c] !== 0) {
-          const x = PAD + c * CELL;
-          const y = PAD + r * CELL;
+          const x = PAD + c * CELL_NOW;
+          const y = PAD + r * CELL_NOW;
 
           const anim = animatingBoxes.find(b => b.r === r && b.c === c);
           if (anim) {
             const progress = (now - anim.start) / 600;
             const scale = 1 + 0.18 * Math.sin(progress * Math.PI);
             const alpha = 0.25 + 0.55 * (1 - progress);
-            // Use chosen player colors
             const col = boxes[r][c] === 1 ? p1color : p2color;
             const rgb = col.slice(1).match(/.{2}/g).map(x=>parseInt(x,16));
             ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
             ctx.save();
-            ctx.translate(x + CELL / 2, y + CELL / 2);
+            ctx.translate(x + CELL_NOW / 2, y + CELL_NOW / 2);
             ctx.scale(scale, scale);
-            ctx.fillRect(-CELL / 2, -CELL / 2, CELL, CELL);
+            ctx.fillRect(-CELL_NOW / 2, -CELL_NOW / 2, CELL_NOW, CELL_NOW);
             ctx.restore();
           } else {
-            // Use chosen player colors at 25% opacity
             const col = boxes[r][c] === 1 ? p1color : p2color;
             const rgb = col.slice(1).match(/.{2}/g).map(x=>parseInt(x,16));
             ctx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.25)`;
-            ctx.fillRect(x, y, CELL, CELL);
+            ctx.fillRect(x, y, CELL_NOW, CELL_NOW);
           }
 
           ctx.fillStyle = boxes[r][c] === 1 ? p1color : p2color;
-          ctx.font = 'bold 22px Segoe UI';
+          // Scale font with cell size
+          const fontSize = Math.max(12, Math.round(CELL_NOW * 0.27));
+          ctx.font = `bold ${fontSize}px Segoe UI`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           const initial = boxes[r][c] === 1
             ? p1.charAt(0).toUpperCase()
             : p2.charAt(0).toUpperCase();
-          ctx.fillText(initial, x + CELL / 2, y + CELL / 2);
+          ctx.fillText(initial, x + CELL_NOW / 2, y + CELL_NOW / 2);
         }
       }
     }
 
+    // Horizontal lines
     for (let r = 0; r < DOTS; r++) {
       for (let c = 0; c < DOTS - 1; c++) {
-        const x1 = PAD + c * CELL;
-        const y1 = PAD + r * CELL;
-        const x2 = x1 + CELL;
+        const x1 = PAD + c * CELL_NOW;
+        const y1 = PAD + r * CELL_NOW;
+        const x2 = x1 + CELL_NOW;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y1);
@@ -957,11 +996,12 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
       }
     }
 
+    // Vertical lines
     for (let r = 0; r < DOTS - 1; r++) {
       for (let c = 0; c < DOTS; c++) {
-        const x1 = PAD + c * CELL;
-        const y1 = PAD + r * CELL;
-        const y2 = y1 + CELL;
+        const x1 = PAD + c * CELL_NOW;
+        const y1 = PAD + r * CELL_NOW;
+        const y2 = y1 + CELL_NOW;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x1, y2);
@@ -980,71 +1020,33 @@ document.querySelectorAll('#p2swatches .color-swatch').forEach(swatch => {
       }
     }
 
+    // Dots
     for (let r = 0; r < DOTS; r++) {
       for (let c = 0; c < DOTS; c++) {
         ctx.beginPath();
-        ctx.arc(PAD + c * CELL, PAD + r * CELL, DOT_R, 0, Math.PI * 2);
+        ctx.arc(PAD + c * CELL_NOW, PAD + r * CELL_NOW, DOT_R, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
         ctx.fill();
       }
     }
   }
 
-  // ── CLICK HANDLING ──────────────────────────────────────
-  let hoverLine = null;
-
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-
-  let found = null;
-
-  for (let r = 0; r < DOTS; r++) {
-    for (let c = 0; c < DOTS - 1; c++) {
-      if (hLines[r][c]) continue;
-      const x = PAD + c * CELL + CELL / 2;
-      const y = PAD + r * CELL;
-      if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
-        found = { type: 'h', r, c };
-      }
-    }
+  // ── SNAP HIT DETECTION — uses actual current cell size ───
+  function getSnapZone() {
+    const CELL_NOW = getCellSize();
+    return { CELL_NOW, SNAP_NOW: Math.max(14, Math.round(CELL_NOW * 0.22)) };
   }
 
-  for (let r = 0; r < DOTS - 1; r++) {
-    for (let c = 0; c < DOTS; c++) {
-      if (vLines[r][c]) continue;
-      const x = PAD + c * CELL;
-      const y = PAD + r * CELL + CELL / 2;
-      if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
-        found = { type: 'v', r, c };
-      }
-    }
-  }
-
-  if (JSON.stringify(found) !== JSON.stringify(hoverLine)) {
-    hoverLine = found;
-    draw();
-  }
-});
-
-canvas.addEventListener('mouseleave', () => {
-  hoverLine = null;
-  draw();
-});
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+  function findLine(mx, my) {
+    const { CELL_NOW, SNAP_NOW } = getSnapZone();
 
     for (let r = 0; r < DOTS; r++) {
       for (let c = 0; c < DOTS - 1; c++) {
         if (hLines[r][c]) continue;
-        const x = PAD + c * CELL + CELL / 2;
-        const y = PAD + r * CELL;
-        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
-          playLine('h', r, c);
-          return;
+        const x = PAD + c * CELL_NOW + CELL_NOW / 2;
+        const y = PAD + r * CELL_NOW;
+        if (Math.abs(mx - x) < CELL_NOW / 2 - 5 && Math.abs(my - y) < SNAP_NOW) {
+          return { type: 'h', r, c };
         }
       }
     }
@@ -1052,57 +1054,68 @@ canvas.addEventListener('click', (e) => {
     for (let r = 0; r < DOTS - 1; r++) {
       for (let c = 0; c < DOTS; c++) {
         if (vLines[r][c]) continue;
-        const x = PAD + c * CELL;
-        const y = PAD + r * CELL + CELL / 2;
-        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
-          playLine('v', r, c);
-          return;
+        const x = PAD + c * CELL_NOW;
+        const y = PAD + r * CELL_NOW + CELL_NOW / 2;
+        if (Math.abs(mx - x) < SNAP_NOW && Math.abs(my - y) < CELL_NOW / 2 - 5) {
+          return { type: 'v', r, c };
         }
       }
     }
+
+    return null;
+  }
+
+  // ── MOUSE EVENTS ────────────────────────────────────────
+  let hoverLine = null;
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top)  * scaleY;
+    const found = findLine(mx, my);
+    if (JSON.stringify(found) !== JSON.stringify(hoverLine)) {
+      hoverLine = found;
+      draw();
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoverLine = null;
+    draw();
+  });
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top)  * scaleY;
+    const line = findLine(mx, my);
+    if (line) playLine(line.type, line.r, line.c);
   });
 
   // ── TOUCH SUPPORT ───────────────────────────────────────
   function getTouchPos(e) {
     const rect = canvas.getBoundingClientRect();
     const touch = e.changedTouches[0];
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-      mx: touch.clientX - rect.left,
-      my: touch.clientY - rect.top
+      mx: (touch.clientX - rect.left) * scaleX,
+      my: (touch.clientY - rect.top)  * scaleY
     };
   }
 
   canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // stops the page from scrolling while playing
+    e.preventDefault();
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const { mx, my } = getTouchPos(e);
-    let found = null;
-
-    for (let r = 0; r < DOTS; r++) {
-      for (let c = 0; c < DOTS - 1; c++) {
-        if (hLines[r][c]) continue;
-        const x = PAD + c * CELL + CELL / 2;
-        const y = PAD + r * CELL;
-        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
-          found = { type: 'h', r, c };
-        }
-      }
-    }
-
-    for (let r = 0; r < DOTS - 1; r++) {
-      for (let c = 0; c < DOTS; c++) {
-        if (vLines[r][c]) continue;
-        const x = PAD + c * CELL;
-        const y = PAD + r * CELL + CELL / 2;
-        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
-          found = { type: 'v', r, c };
-        }
-      }
-    }
-
+    const found = findLine(mx, my);
     if (JSON.stringify(found) !== JSON.stringify(hoverLine)) {
       hoverLine = found;
       draw();
@@ -1112,42 +1125,18 @@ canvas.addEventListener('click', (e) => {
   canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     const { mx, my } = getTouchPos(e);
-
-    for (let r = 0; r < DOTS; r++) {
-      for (let c = 0; c < DOTS - 1; c++) {
-        if (hLines[r][c]) continue;
-        const x = PAD + c * CELL + CELL / 2;
-        const y = PAD + r * CELL;
-        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
-          hoverLine = null;
-          playLine('h', r, c);
-          return;
-        }
-      }
-    }
-
-    for (let r = 0; r < DOTS - 1; r++) {
-      for (let c = 0; c < DOTS; c++) {
-        if (vLines[r][c]) continue;
-        const x = PAD + c * CELL;
-        const y = PAD + r * CELL + CELL / 2;
-        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
-          hoverLine = null;
-          playLine('v', r, c);
-          return;
-        }
-      }
-    }
-
-    // Tapped somewhere that wasn't a valid line — clear the hover
+    const line = findLine(mx, my);
     hoverLine = null;
-    draw();
+    if (line) {
+      playLine(line.type, line.r, line.c);
+    } else {
+      draw();
+    }
   }, { passive: false });
 
-  
   // ── GAME LOGIC ──────────────────────────────────────────
   function playLine(type, r, c) {
-    stopTimer(); // stop timer the moment a move is made
+    stopTimer();
     if (type === 'h') hLines[r][c] = currentPlayer;
     else              vLines[r][c] = currentPlayer;
     playSound('click');
@@ -1156,8 +1145,20 @@ canvas.addEventListener('click', (e) => {
 
     if (claimed > 0) {
       scores[currentPlayer - 1] += claimed;
-      score1El.textContent = scores[0];
-      score2El.textContent = scores[1];
+
+      // ── FIX 4: Animate the score number ──
+      const scoreEl = currentPlayer === 1 ? score1El : score2El;
+      scoreEl.textContent = scores[currentPlayer - 1];
+      scoreEl.classList.remove('score-pop');
+      // Force reflow so the animation restarts if claimed multiple times fast
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('score-pop');
+      scoreEl.addEventListener('animationend', () => scoreEl.classList.remove('score-pop'), { once: true });
+
+      // Keep the other score display in sync
+      const otherEl = currentPlayer === 1 ? score2El : score1El;
+      otherEl.textContent = scores[currentPlayer === 1 ? 1 : 0];
+
       if (vsComputer && currentPlayer === 1) dotsConsecutive = 0;
 
       if (isGameOver()) { draw(); showResult(); return; }
@@ -1185,190 +1186,179 @@ canvas.addEventListener('click', (e) => {
   }
 
   function animateBoxes() {
-  const DURATION = 600;
-  const now = performance.now();
-  animatingBoxes = animatingBoxes.filter(b => now - b.start < DURATION);
-  draw();
-  if (animatingBoxes.length > 0) requestAnimationFrame(animateBoxes);
-}
+    const DURATION = 600;
+    const now = performance.now();
+    animatingBoxes = animatingBoxes.filter(b => now - b.start < DURATION);
+    draw();
+    if (animatingBoxes.length > 0) requestAnimationFrame(animateBoxes);
+  }
 
-const dotsQuips = {
-  claim: [
-    "That box is MINE. 🤖",
-    "Calculating... yes, that's mine now.",
-    "D.O.T.S. claims another victim.",
-    "Too easy. Almost feel bad. Almost.",
-    "Beep boop. Box acquired.",
-    "My circuits are tingling with joy.",
-    "Did you see that coming? I did. Obviously.",
-  ],
-  move: [
-    "Interesting move. Wrong, but interesting.",
-    "I've already calculated your next 47 moves.",
-    "Take your time. I'll wait. I'm a computer.",
-    "My grandmother could play faster. I don't have a grandmother.",
-    "Plotting... always plotting. 🤖",
-    "You sure about that?",
-    "Noted. Countermeasures deployed.",
-  ],
-  win: [
-    "D.O.T.S. wins. As predicted. As always.",
-    "Better luck next time. My odds say you'll need it.",
-    "I felt nothing. That's a lie. I felt everything.",
-    "Resistance was futile. It usually is.",
-    "Rematch? I'll try to lose more slowly this time.",
-  ],
-  lose: [
-    "I let you win. Obviously.",
-    "A glitch. Definitely a glitch.",
-    "This has been logged as an anomaly.",
-    "Impossible. Recalculating entire existence.",
-    "You got lucky. My revenge will be calculated.",
-  ]
-};
+  const dotsQuips = {
+    claim: [
+      "That box is MINE. 🤖",
+      "Calculating... yes, that's mine now.",
+      "D.O.T.S. claims another victim.",
+      "Too easy. Almost feel bad. Almost.",
+      "Beep boop. Box acquired.",
+      "My circuits are tingling with joy.",
+      "Did you see that coming? I did. Obviously.",
+    ],
+    move: [
+      "Interesting move. Wrong, but interesting.",
+      "I've already calculated your next 47 moves.",
+      "Take your time. I'll wait. I'm a computer.",
+      "My grandmother could play faster. I don't have a grandmother.",
+      "Plotting... always plotting. 🤖",
+      "You sure about that?",
+      "Noted. Countermeasures deployed.",
+    ],
+    win: [
+      "D.O.T.S. wins. As predicted. As always.",
+      "Better luck next time. My odds say you'll need it.",
+      "I felt nothing. That's a lie. I felt everything.",
+      "Resistance was futile. It usually is.",
+      "Rematch? I'll try to lose more slowly this time.",
+    ],
+    lose: [
+      "I let you win. Obviously.",
+      "A glitch. Definitely a glitch.",
+      "This has been logged as an anomaly.",
+      "Impossible. Recalculating entire existence.",
+      "You got lucky. My revenge will be calculated.",
+    ]
+  };
 
-let lastQuip = '';
-let dotsFirstBlood = false;
-let dotsConsecutive = 0;
+  let lastQuip = '';
+  let dotsFirstBlood = false;
+  let dotsConsecutive = 0;
 
-function showDotsQuip(category) {
-  const pool = dotsQuips[category].filter(q => q !== lastQuip);
-  const quip = pool[Math.floor(Math.random() * pool.length)];
-  lastQuip = quip;
-  const el = document.getElementById('dotsQuip');
-  el.textContent = quip;
-  el.style.opacity = '1';
-  setTimeout(() => { el.style.opacity = '0'; }, 3000);
-}
+  function showDotsQuip(category) {
+    const pool = dotsQuips[category].filter(q => q !== lastQuip);
+    const quip = pool[Math.floor(Math.random() * pool.length)];
+    lastQuip = quip;
+    const el = document.getElementById('dotsQuip');
+    el.textContent = quip;
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 3000);
+  }
 
-function clearDotsQuip() {
-  document.getElementById('dotsQuip').style.opacity = '0';
-}
+  function clearDotsQuip() {
+    document.getElementById('dotsQuip').style.opacity = '0';
+  }
 
-function doComputerMove() {
-  if (isGameOver()) return;
+  function doComputerMove() {
+    if (isGameOver()) return;
 
-  const move = getBestMove();
-  if (!move) return;
+    const move = getBestMove();
+    if (!move) return;
 
-  const willClaim = moveCompletesBox(move.type, move.r, move.c);
-  playLine(move.type, move.r, move.c);
+    const willClaim = moveCompletesBox(move.type, move.r, move.c);
+    playLine(move.type, move.r, move.c);
 
-  if (vsComputer) {
-   if (willClaim) {
-      if (!dotsFirstBlood) {
-        dotsFirstBlood = true;
-        showDotsQuip('claim');
-      } else if (Math.random() < 0.25) {
-        showDotsQuip('claim');
-      }
-    } else {
-      dotsConsecutive = 0;
-      if (Math.random() < 0.12) {
-        showDotsQuip('move');
+    if (vsComputer) {
+      if (willClaim) {
+        if (!dotsFirstBlood) {
+          dotsFirstBlood = true;
+          showDotsQuip('claim');
+        } else if (Math.random() < 0.25) {
+          showDotsQuip('claim');
+        }
+      } else {
+        dotsConsecutive = 0;
+        if (Math.random() < 0.12) {
+          showDotsQuip('move');
+        }
       }
     }
   }
-}
 
-function getAllAvailableMoves() {
-  const moves = [];
-  for (let r = 0; r < DOTS; r++)
-    for (let c = 0; c < DOTS - 1; c++)
-      if (!hLines[r][c]) moves.push({ type: 'h', r, c });
-  for (let r = 0; r < DOTS - 1; r++)
-    for (let c = 0; c < DOTS; c++)
-      if (!vLines[r][c]) moves.push({ type: 'v', r, c });
-  return moves;
-}
-
-function countSidesOfBox(r, c) {
-  let sides = 0;
-  if (hLines[r][c])     sides++;
-  if (hLines[r+1][c])   sides++;
-  if (vLines[r][c])     sides++;
-  if (vLines[r][c+1])   sides++;
-  return sides;
-}
-
-function moveCompletesBox(type, r, c) {
-  // Temporarily apply the move and check if any box gets completed
-  if (type === 'h') hLines[r][c] = 2;
-  else              vLines[r][c] = 2;
-
-  let completes = false;
-  if (type === 'h') {
-    if (r > 0 && countSidesOfBox(r-1, c) === 4) completes = true;
-    if (r < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
-  } else {
-    if (c > 0 && countSidesOfBox(r, c-1) === 4) completes = true;
-    if (c < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
+  function getAllAvailableMoves() {
+    const moves = [];
+    for (let r = 0; r < DOTS; r++)
+      for (let c = 0; c < DOTS - 1; c++)
+        if (!hLines[r][c]) moves.push({ type: 'h', r, c });
+    for (let r = 0; r < DOTS - 1; r++)
+      for (let c = 0; c < DOTS; c++)
+        if (!vLines[r][c]) moves.push({ type: 'v', r, c });
+    return moves;
   }
 
-  // Undo the temporary move
-  if (type === 'h') hLines[r][c] = 0;
-  else              vLines[r][c] = 0;
-
-  return completes;
-}
-
-function moveGivesOpponentBox(type, r, c) {
-  // After this move, would any box have exactly 3 sides?
-  if (type === 'h') hLines[r][c] = 2;
-  else              vLines[r][c] = 2;
-
-  let givesBox = false;
-  if (type === 'h') {
-    if (r > 0 && countSidesOfBox(r-1, c) === 3) givesBox = true;
-    if (r < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
-  } else {
-    if (c > 0 && countSidesOfBox(r, c-1) === 3) givesBox = true;
-    if (c < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
+  function countSidesOfBox(r, c) {
+    let sides = 0;
+    if (hLines[r][c])     sides++;
+    if (hLines[r+1][c])   sides++;
+    if (vLines[r][c])     sides++;
+    if (vLines[r][c+1])   sides++;
+    return sides;
   }
 
-  if (type === 'h') hLines[r][c] = 0;
-  else              vLines[r][c] = 0;
+  function moveCompletesBox(type, r, c) {
+    if (type === 'h') hLines[r][c] = 2;
+    else              vLines[r][c] = 2;
 
-  return givesBox;
-}
+    let completes = false;
+    if (type === 'h') {
+      if (r > 0 && countSidesOfBox(r-1, c) === 4) completes = true;
+      if (r < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
+    } else {
+      if (c > 0 && countSidesOfBox(r, c-1) === 4) completes = true;
+      if (c < DOTS-1 && countSidesOfBox(r, c) === 4) completes = true;
+    }
 
-function getBestMove() {
-  const moves = getAllAvailableMoves();
-  if (moves.length === 0) return null;
+    if (type === 'h') hLines[r][c] = 0;
+    else              vLines[r][c] = 0;
 
-  // EASY — pure random
-  if (difficulty === 'easy') {
+    return completes;
+  }
+
+  function moveGivesOpponentBox(type, r, c) {
+    if (type === 'h') hLines[r][c] = 2;
+    else              vLines[r][c] = 2;
+
+    let givesBox = false;
+    if (type === 'h') {
+      if (r > 0 && countSidesOfBox(r-1, c) === 3) givesBox = true;
+      if (r < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
+    } else {
+      if (c > 0 && countSidesOfBox(r, c-1) === 3) givesBox = true;
+      if (c < DOTS-1 && countSidesOfBox(r, c) === 3) givesBox = true;
+    }
+
+    if (type === 'h') hLines[r][c] = 0;
+    else              vLines[r][c] = 0;
+
+    return givesBox;
+  }
+
+  function getBestMove() {
+    const moves = getAllAvailableMoves();
+    if (moves.length === 0) return null;
+
+    if (difficulty === 'easy') {
+      return moves[Math.floor(Math.random() * moves.length)];
+    }
+
+    if (difficulty === 'medium') {
+      const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
+      if (winning.length > 0)
+        return winning[Math.floor(Math.random() * winning.length)];
+      return moves[Math.floor(Math.random() * moves.length)];
+    }
+
+    if (difficulty === 'hard') {
+      const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
+      if (winning.length > 0)
+        return winning[Math.floor(Math.random() * winning.length)];
+      const safe = moves.filter(m => !moveGivesOpponentBox(m.type, m.r, m.c));
+      if (safe.length > 0)
+        return safe[Math.floor(Math.random() * safe.length)];
+      return moves[Math.floor(Math.random() * moves.length)];
+    }
+
     return moves[Math.floor(Math.random() * moves.length)];
   }
 
-  // MEDIUM — take a completing move if available, else random
-  if (difficulty === 'medium') {
-    const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
-    if (winning.length > 0)
-      return winning[Math.floor(Math.random() * winning.length)];
-    return moves[Math.floor(Math.random() * moves.length)];
-  }
-
-  // HARD — take completing move, avoid giving opponent boxes, else random
-  if (difficulty === 'hard') {
-    // First priority: complete a box
-    const winning = moves.filter(m => moveCompletesBox(m.type, m.r, m.c));
-    if (winning.length > 0)
-      return winning[Math.floor(Math.random() * winning.length)];
-
-    // Second priority: avoid giving opponent a box
-    const safe = moves.filter(m => !moveGivesOpponentBox(m.type, m.r, m.c));
-    if (safe.length > 0)
-      return safe[Math.floor(Math.random() * safe.length)];
-
-    // No safe moves — pick the least damaging (move that creates fewest 3-sided boxes)
-    return moves[Math.floor(Math.random() * moves.length)];
-  }
-
-  return moves[Math.floor(Math.random() * moves.length)];
-}  
-
-function checkBoxes() {
+  function checkBoxes() {
     let newlyClaimed = 0;
     for (let r = 0; r < DOTS - 1; r++) {
       for (let c = 0; c < DOTS - 1; c++) {
@@ -1378,7 +1368,7 @@ function checkBoxes() {
         const left   = vLines[r][c];
         const right  = vLines[r][c + 1];
         if (top && bottom && left && right) {
-         boxes[r][c] = currentPlayer;
+          boxes[r][c] = currentPlayer;
           newlyClaimed++;
           animatingBoxes.push({ r, c, player: currentPlayer, start: performance.now() });
           requestAnimationFrame(animateBoxes);
@@ -1400,7 +1390,6 @@ function checkBoxes() {
     card1.classList.toggle('inactive', currentPlayer !== 1);
     card2.classList.toggle('active', currentPlayer === 2);
     card2.classList.toggle('inactive', currentPlayer !== 2);
-    // Start timer — but not during D.O.T.S.'s turn (computer handles its own timing)
     if (vsComputer && currentPlayer === 2) {
       stopTimer();
     } else {
@@ -1421,12 +1410,12 @@ function checkBoxes() {
     document.getElementById('finalScore2').textContent = s2;
 
     const title = document.getElementById('resultTitle');
-   if (s1 > s2) {
+    if (s1 > s2) {
       title.textContent = `${p1} Wins!`;
       document.getElementById('finalCard1').classList.add('winner-card');
       document.getElementById('finalCard2').classList.remove('winner-card');
       record.p1wins++;
-     if (vsComputer) showDotsQuip('lose');
+      if (vsComputer) showDotsQuip('lose');
       playSound('win');
       launchConfetti();
     } else if (s2 > s1) {
