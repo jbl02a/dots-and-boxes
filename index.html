@@ -1062,6 +1062,89 @@ canvas.addEventListener('click', (e) => {
     }
   });
 
+  // ── TOUCH SUPPORT ───────────────────────────────────────
+  function getTouchPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.changedTouches[0];
+    return {
+      mx: touch.clientX - rect.left,
+      my: touch.clientY - rect.top
+    };
+  }
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // stops the page from scrolling while playing
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const { mx, my } = getTouchPos(e);
+    let found = null;
+
+    for (let r = 0; r < DOTS; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        if (hLines[r][c]) continue;
+        const x = PAD + c * CELL + CELL / 2;
+        const y = PAD + r * CELL;
+        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
+          found = { type: 'h', r, c };
+        }
+      }
+    }
+
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS; c++) {
+        if (vLines[r][c]) continue;
+        const x = PAD + c * CELL;
+        const y = PAD + r * CELL + CELL / 2;
+        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
+          found = { type: 'v', r, c };
+        }
+      }
+    }
+
+    if (JSON.stringify(found) !== JSON.stringify(hoverLine)) {
+      hoverLine = found;
+      draw();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const { mx, my } = getTouchPos(e);
+
+    for (let r = 0; r < DOTS; r++) {
+      for (let c = 0; c < DOTS - 1; c++) {
+        if (hLines[r][c]) continue;
+        const x = PAD + c * CELL + CELL / 2;
+        const y = PAD + r * CELL;
+        if (Math.abs(mx - x) < CELL / 2 - 5 && Math.abs(my - y) < SNAP) {
+          hoverLine = null;
+          playLine('h', r, c);
+          return;
+        }
+      }
+    }
+
+    for (let r = 0; r < DOTS - 1; r++) {
+      for (let c = 0; c < DOTS; c++) {
+        if (vLines[r][c]) continue;
+        const x = PAD + c * CELL;
+        const y = PAD + r * CELL + CELL / 2;
+        if (Math.abs(mx - x) < SNAP && Math.abs(my - y) < CELL / 2 - 5) {
+          hoverLine = null;
+          playLine('v', r, c);
+          return;
+        }
+      }
+    }
+
+    // Tapped somewhere that wasn't a valid line — clear the hover
+    hoverLine = null;
+    draw();
+  }, { passive: false });
+
+  
   // ── GAME LOGIC ──────────────────────────────────────────
   function playLine(type, r, c) {
     stopTimer(); // stop timer the moment a move is made
