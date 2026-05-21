@@ -61,7 +61,7 @@
       flex-wrap: wrap;
     }
 
-    .size-card, .opp-card, .diff-card {
+    .size-card, .opp-card, .diff-card, .series-card {
       flex: 1;
       min-width: 60px;
       padding: 10px 6px;
@@ -73,8 +73,8 @@
       transition: border-color 0.2s, background 0.2s;
     }
 
-    .size-card:hover, .opp-card:hover, .diff-card:hover { border-color: #4895ef; }
-    .size-card.selected, .opp-card.selected, .diff-card.selected {
+    .size-card:hover, .opp-card:hover, .diff-card:hover, .series-card:hover { border-color: #4895ef; }
+    .size-card.selected, .opp-card.selected, .diff-card.selected, .series-card.selected {
       border-color: #ffd700;
       background: rgba(255,215,0,0.1);
     }
@@ -258,6 +258,9 @@
 
     #shareCopied { font-size: 0.8rem; color: #51cf66; min-height: 18px; }
 
+    #seriesBanner { color: #ffd700; font-size: 1rem; font-style: italic; min-height: 1.2em; }
+    #seriesScore  { color: #aaa; font-size: 0.9rem; min-height: 1.1em; }
+
     .confetti-piece {
       position: fixed; top: -20px; opacity: 0;
       animation: confettiFall linear forwards;
@@ -339,6 +342,14 @@
     <input type="checkbox" id="timedMode">
     <span><strong>⏱️ Timed Mode:</strong> 10 sec vs Human · 5 sec vs D.O.T.S. Time out = random move, no mercy.</span>
   </div>
+  <div>
+    <label>Series</label>
+    <div class="size-options">
+      <div class="series-card selected" data-series="single"><div class="size-label">Single Game</div><div class="size-sub">One &amp; done</div></div>
+      <div class="series-card" data-series="bo3"><div class="size-label">Best of 3</div><div class="size-sub">First to 2 wins</div></div>
+      <div class="series-card" data-series="bo5"><div class="size-label">Best of 5</div><div class="size-sub">First to 3 wins</div></div>
+    </div>
+  </div>
   <button id="startBtn">▶ Start Game</button>
   <div id="howToPlay">
     <button id="howToPlayBtn" onclick="toggleHowToPlay()">▶ How to Play</button>
@@ -389,7 +400,9 @@
 <!-- ── RESULT ── -->
 <div id="result">
   <div class="trophy">🏆</div>
+  <div id="seriesBanner"></div>
   <h2 id="resultTitle"></h2>
+  <div id="seriesScore"></div>
   <div class="final-scores">
     <div class="final-score-card" id="finalCard1">
       <div class="fs-name" id="finalName1"></div>
@@ -422,6 +435,7 @@
   let lastMove = null;
   let dotsFirstBlood = false, dotsConsecutive = 0, lastQuip = '';
   let computerMovePending = false;
+  let seriesMode = 'single', seriesTarget = 0;
 
   // ── ELEMENTS ────────────────────────────────────────────
   const setupEl  = document.getElementById('setup');
@@ -581,6 +595,9 @@
   document.querySelectorAll('.diff-card').forEach(c => c.addEventListener('click', () => {
     document.querySelectorAll('.diff-card').forEach(x=>x.classList.remove('selected')); c.classList.add('selected');
   }));
+  document.querySelectorAll('.series-card').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('.series-card').forEach(x=>x.classList.remove('selected')); c.classList.add('selected');
+  }));
   document.querySelectorAll('#p1swatches .color-swatch').forEach(s => s.addEventListener('click', () => {
     document.querySelectorAll('#p1swatches .color-swatch').forEach(x=>x.classList.remove('selected')); s.classList.add('selected');
   }));
@@ -612,7 +629,10 @@
     vsComputer = document.querySelector('.opp-card.selected').dataset.opp === 'computer';
     difficulty = document.querySelector('.diff-card.selected').dataset.diff;
     if (vsComputer) p2 = 'D.O.T.S.';
+    seriesMode = document.querySelector('.series-card.selected').dataset.series;
+    seriesTarget = seriesMode === 'bo3' ? 2 : seriesMode === 'bo5' ? 3 : 0;
     record = { p1wins:0, p2wins:0, ties:0 };
+    document.getElementById('rematchBtn').disabled = false;
     name1El.textContent = p1;
     name2El.textContent = vsComputer ? '🤖 D.O.T.S.' : p2;
 
@@ -990,6 +1010,22 @@
     document.getElementById('record1').textContent = `W: ${record.p1wins} · L: ${record.p2wins}`;
     document.getElementById('record2').textContent = `W: ${record.p2wins} · L: ${record.p1wins}`;
     document.getElementById('shareCopied').textContent = '';
+    const banner = document.getElementById('seriesBanner');
+    const seriesScoreEl = document.getElementById('seriesScore');
+    banner.textContent = '';
+    seriesScoreEl.textContent = '';
+    if (seriesTarget > 0) {
+      if (record.p1wins >= seriesTarget) {
+        banner.textContent = `${p1} wins the series!`;
+        document.getElementById('rematchBtn').disabled = true;
+      } else if (record.p2wins >= seriesTarget) {
+        banner.textContent = `${p2} wins the series!`;
+        document.getElementById('rematchBtn').disabled = true;
+      } else {
+        seriesScoreEl.textContent = `Series: ${record.p1wins} – ${record.p2wins}`;
+        document.getElementById('rematchBtn').disabled = false;
+      }
+    }
   }
 
   // ── SHARE ───────────────────────────────────────────────
