@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node gen-icons.js)",
+      "Bash(Remove-Item gen-icons.js)",
+      "Bash(Get-ChildItem -Name index.html, manifest.json, service-worker.js, icons\\\\icon-192.png, icons\\\\icon-512.png)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\jorda\\\\Documents\\\\Projects\\\\dots-and-boxes\" | Where-Object { $_.Name -in @\\('index.html','manifest.json','service-worker.js'\\) } | Select-Object -ExpandProperty Name)"
+    ]
+  }
+}
