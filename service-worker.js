@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dots-boxes-v2.0';
+const CACHE_NAME = 'dots-boxes-v2.01';
 const FILES_TO_CACHE = ['/', '/index.html'];
 
 self.addEventListener('install', event => {
