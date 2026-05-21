@@ -367,7 +367,15 @@
       letter-spacing: 3px;
       text-transform: uppercase;
       margin-top: 4px;
-      margin-bottom: 28px;
+      margin-bottom: 12px;
+    }
+    .cm-name-row {
+      width: 100%; max-width: 460px; text-align: left; margin-bottom: 20px;
+    }
+    .cm-name-label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 6px; }
+    #cmName {
+      width: 100%; padding: 10px 14px; border-radius: 8px;
+      border: 1px solid #333; background: #0f3460; color: #fff; font-size: 1rem;
     }
 
     .campaign-tier {
@@ -695,6 +703,10 @@
   <button class="campaign-back" onclick="closeCampaignMap()">← Back</button>
   <div class="campaign-title">🗺️ CAMPAIGN MODE</div>
   <div class="campaign-subtitle">Conquer D.O.T.S.</div>
+  <div class="cm-name-row">
+    <label class="cm-name-label">Your Name</label>
+    <input type="text" id="cmName" placeholder="Enter name..." maxlength="12">
+  </div>
   <div id="campaignTiers"></div>
 </div>
 
@@ -1076,6 +1088,7 @@
   function openCampaignMap() {
     campaignState = loadCampaignData();
     buildCampaignMap();
+    document.getElementById('cmName').value = document.getElementById('p1name').value;
     document.getElementById('campaignMapOverlay').style.display = 'flex';
   }
 
@@ -2137,6 +2150,11 @@
     gameEl.style.display = 'none';
     setupEl.style.display = 'flex';
     hideResetOptions();
+  });
+
+  // ── CAMPAIGN MAP NAME SYNC ───────────────────────────────
+  document.getElementById('cmName').addEventListener('input', () => {
+    document.getElementById('p1name').value = document.getElementById('cmName').value;
   });
 
   // ── CAMPAIGN QUIT ─────────────────────────────────────────
