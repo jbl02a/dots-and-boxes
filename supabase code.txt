@@ -1,0 +1,5 @@
+pass BeQe1EHjjgqhwGl6
+
+project url https://cuszyacbzpdnhiodsgcb.supabase.co
+
+anon public eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1c3p5YWNienBkbmhpb2RzZ2NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTE4MDksImV4cCI6MjA5NDg4NzgwOX0.1xdP5JXE0iUWT8Tk2exmB0EguzzknNX7JHhH7wuW3XQ

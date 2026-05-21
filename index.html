@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dots and Boxes</title>
   <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta name="theme-color" content="#e94560">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -276,6 +277,31 @@
       100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
 
+    /* ── ONLINE MODE ── */
+    #onlineOptions { display: none; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .room-code-display {
+      font-size: 2rem; font-weight: bold; color: #ffd700;
+      letter-spacing: 4px; text-align: center;
+    }
+    .online-status { font-style: italic; color: #aaa; font-size: 0.85rem; text-align: center; }
+    .online-error  { color: #e94560; font-size: 0.85rem; text-align: center; min-height: 18px; }
+    #onlineOptions input[type="text"] {
+      max-width: 120px; text-align: center;
+      font-size: 1.2rem; letter-spacing: 3px;
+    }
+    .online-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .online-section {
+      background: #0f3460; border-radius: 8px; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .online-section-label { font-size: 0.8rem; color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    .online-action-btn {
+      padding: 10px 18px; background: #4895ef; color: white;
+      border: none; border-radius: 8px; font-size: 0.95rem;
+      cursor: pointer; font-weight: bold; transition: background 0.2s;
+    }
+    .online-action-btn:hover { background: #357abd; }
+
     @media (max-width: 400px) {
       .size-sub { display: none; }
       .score-card { padding: 8px 10px; }
@@ -329,6 +355,23 @@
     <div class="size-options">
       <div class="opp-card selected" data-opp="human"><div class="size-label">👤 Human</div><div class="size-sub">Two players</div></div>
       <div class="opp-card" data-opp="computer"><div class="size-label">🤖 D.O.T.S.</div><div class="size-sub">vs AI</div></div>
+      <div class="opp-card" data-opp="online"><div class="size-label">🌐 Online</div><div class="size-sub">Play a friend remotely</div></div>
+    </div>
+    <div id="onlineOptions">
+      <div class="online-section">
+        <div class="online-section-label">Create a Game</div>
+        <button class="online-action-btn" id="createGameBtn">Create Game</button>
+        <div id="createStatus" class="online-status"></div>
+        <div id="createCode" class="room-code-display" style="display:none"></div>
+      </div>
+      <div class="online-section">
+        <div class="online-section-label">Join a Game</div>
+        <div class="online-row">
+          <input type="text" id="joinCodeInput" placeholder="XXXX" maxlength="4">
+          <button class="online-action-btn" id="joinGameBtn">Join Game</button>
+        </div>
+        <div id="joinError" class="online-error"></div>
+      </div>
     </div>
   </div>
   <div id="difficultyRow" style="display:none">
@@ -433,6 +476,12 @@
   let DOTS = 6;
   const PAD = 36, DOT_R = 6;
 
+  // ── SUPABASE ─────────────────────────────────────────────
+  const supabaseClient = window.supabase.createClient(
+    'https://cuszyacbzpdnhiodsgcb.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1c3p5YWNienBkbmhpb2RzZ2NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTE4MDksImV4cCI6MjA5NDg4NzgwOX0.1xdP5JXE0iUWT8Tk2exmB0EguzzknNX7JHhH7wuW3XQ'
+  );
+
   // ── STATE ───────────────────────────────────────────────
   let p1, p2, bonusRule, currentPlayer;
   let p1color, p2color;
@@ -443,6 +492,12 @@
   let dotsFirstBlood = false, dotsConsecutive = 0, lastQuip = '';
   let computerMovePending = false;
   let seriesMode = 'single', seriesTarget = 0;
+
+  // ── ONLINE STATE ─────────────────────────────────────────
+  let onlineMode = false;
+  let onlinePlayer = null;
+  let roomCode = null;
+  let supabaseChannel = null;
 
   // ── ELEMENTS ────────────────────────────────────────────
   const setupEl  = document.getElementById('setup');
@@ -596,8 +651,15 @@
   }));
   document.querySelectorAll('.opp-card').forEach(c => c.addEventListener('click', () => {
     document.querySelectorAll('.opp-card').forEach(x=>x.classList.remove('selected')); c.classList.add('selected');
-    document.getElementById('difficultyRow').style.display = c.dataset.opp==='computer' ? 'block' : 'none';
-    document.getElementById('p2nameRow').style.display     = c.dataset.opp==='computer' ? 'none'  : 'block';
+    const opp = c.dataset.opp;
+    document.getElementById('difficultyRow').style.display = opp==='computer' ? 'block' : 'none';
+    document.getElementById('p2nameRow').style.display     = (opp==='computer'||opp==='online') ? 'none' : 'block';
+    document.getElementById('onlineOptions').style.display = opp==='online' ? 'flex' : 'none';
+    if (opp !== 'online') {
+      document.getElementById('createStatus').textContent = '';
+      document.getElementById('createCode').style.display = 'none';
+      document.getElementById('joinError').textContent = '';
+    }
   }));
   document.querySelectorAll('.diff-card').forEach(c => c.addEventListener('click', () => {
     document.querySelectorAll('.diff-card').forEach(x=>x.classList.remove('selected')); c.classList.add('selected');
@@ -612,8 +674,24 @@
     document.querySelectorAll('#p2swatches .color-swatch').forEach(x=>x.classList.remove('selected')); s.classList.add('selected');
   }));
 
+  // ── APPLY COLORS ─────────────────────────────────────────
+  function applyColors() {
+    const hexRgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16)).join(',');
+    document.documentElement.style.setProperty('--p1color-faint', `rgba(${hexRgb(p1color)},0.3)`);
+    document.documentElement.style.setProperty('--p1color-bg',    `rgba(${hexRgb(p1color)},0.15)`);
+    document.documentElement.style.setProperty('--p2color-faint', `rgba(${hexRgb(p2color)},0.3)`);
+    document.documentElement.style.setProperty('--p2color-bg',    `rgba(${hexRgb(p2color)},0.15)`);
+    score1El.style.color = p1color;
+    score2El.style.color = p2color;
+    document.getElementById('finalScore1').style.color = p1color;
+    document.getElementById('finalScore2').style.color = p2color;
+  }
+
   // ── START GAME ──────────────────────────────────────────
   document.getElementById('startBtn').addEventListener('click', () => {
+    const oppMode = document.querySelector('.opp-card.selected').dataset.opp;
+    if (oppMode === 'online') return; // online games start via Create/Join buttons
+
     p1 = document.getElementById('p1name').value.trim() || 'Player 1';
     p2 = document.getElementById('p2name').value.trim() || 'Player 2';
     bonusRule = document.getElementById('bonusTurn').checked;
@@ -621,21 +699,13 @@
 
     p1color = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
     p2color = document.querySelector('#p2swatches .color-swatch.selected').dataset.color;
+    applyColors();
 
-    const hexRgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16)).join(',');
-    document.documentElement.style.setProperty('--p1color-faint', `rgba(${hexRgb(p1color)},0.3)`);
-    document.documentElement.style.setProperty('--p1color-bg',    `rgba(${hexRgb(p1color)},0.15)`);
-    document.documentElement.style.setProperty('--p2color-faint', `rgba(${hexRgb(p2color)},0.3)`);
-    document.documentElement.style.setProperty('--p2color-bg',    `rgba(${hexRgb(p2color)},0.15)`);
-
-    score1El.style.color = p1color;
-    score2El.style.color = p2color;
-    document.getElementById('finalScore1').style.color = p1color;
-    document.getElementById('finalScore2').style.color = p2color;
-
-    vsComputer = document.querySelector('.opp-card.selected').dataset.opp === 'computer';
+    vsComputer = oppMode === 'computer';
     difficulty = document.querySelector('.diff-card.selected').dataset.diff;
     if (vsComputer) p2 = 'D.O.T.S.';
+    onlineMode = false;
+    onlinePlayer = null;
     seriesMode = document.querySelector('.series-card.selected').dataset.series;
     seriesTarget = seriesMode === 'bo3' ? 2 : seriesMode === 'bo5' ? 3 : 0;
     record = { p1wins:0, p2wins:0, ties:0 };
@@ -753,8 +823,14 @@
   // ── MOUSE / TOUCH ────────────────────────────────────────
   let hoverLine = null;
 
+  function isMyTurn() {
+    if (computerMovePending) return false;
+    if (onlineMode && currentPlayer !== onlinePlayer) return false;
+    return true;
+  }
+
   canvas.addEventListener('mousemove', e => {
-    if (computerMovePending) return;
+    if (!isMyTurn()) return;
     const {mx,my} = canvasXY(e.clientX, e.clientY);
     const f = findLine(mx,my);
     if (JSON.stringify(f) !== JSON.stringify(hoverLine)) { hoverLine=f; draw(); }
@@ -762,21 +838,21 @@
   canvas.addEventListener('mouseleave', () => { hoverLine=null; draw(); });
   canvas.addEventListener('click', e => {
     if (document.getElementById('resetOptions').style.display !== 'none') { hideResetOptions(); return; }
-    if (computerMovePending) return;
+    if (!isMyTurn()) return;
     const {mx,my} = canvasXY(e.clientX, e.clientY);
     const l = findLine(mx,my); if (l) playLine(l.type,l.r,l.c);
   });
   canvas.addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
   canvas.addEventListener('touchmove', e => {
     e.preventDefault();
-    if (computerMovePending) return;
+    if (!isMyTurn()) return;
     const t=e.changedTouches[0], {mx,my}=canvasXY(t.clientX,t.clientY);
     const f=findLine(mx,my);
     if (JSON.stringify(f)!==JSON.stringify(hoverLine)) { hoverLine=f; draw(); }
   }, {passive:false});
   canvas.addEventListener('touchend', e => {
     e.preventDefault();
-    if (computerMovePending) return;
+    if (!isMyTurn()) return;
     const t=e.changedTouches[0], {mx,my}=canvasXY(t.clientX,t.clientY);
     const l=findLine(mx,my); hoverLine=null;
     if (l) playLine(l.type,l.r,l.c); else draw();
@@ -784,7 +860,7 @@
 
   // ── UNDO ────────────────────────────────────────────────
   function undoMove() {
-    if (!moveHistory.length || computerMovePending) return;
+    if (!moveHistory.length || computerMovePending || onlineMode) return;
     const back = vsComputer ? Math.min(2, moveHistory.length) : 1;
     for (let i=0;i<back;i++) {
       const snap = moveHistory.pop(); if (!snap) break;
@@ -819,6 +895,7 @@
   // ── PLAY LINE (human moves) ─────────────────────────────
   function playLine(type, r, c) {
     if (computerMovePending) return;
+    if (onlineMode && currentPlayer !== onlinePlayer) return;
     saveSnapshot(); stopTimer();
     if (type==='h') hLines[r][c]=currentPlayer; else vLines[r][c]=currentPlayer;
     lastMove = {type, r, c};
@@ -828,16 +905,207 @@
       scores[currentPlayer-1] += claimed;
       popScore(currentPlayer===1?score1El:score2El, scores[currentPlayer-1]);
       (currentPlayer===1?score2El:score1El).textContent = scores[currentPlayer===1?1:0];
-      if (isGameOver()) { draw(); showResult(); return; }
-      if (bonusRule) { draw(); updateTurnIndicator(); return; }
+      if (isGameOver()) {
+        if (onlineMode) pushOnlineState();
+        draw(); showResult(); return;
+      }
+      if (bonusRule) {
+        if (onlineMode) pushOnlineState();
+        draw(); updateTurnIndicator(); return;
+      }
     }
     if (!isGameOver()) {
       currentPlayer = currentPlayer===1 ? 2 : 1;
+      if (onlineMode) pushOnlineState();
       updateTurnIndicator();
       if (vsComputer && currentPlayer===2) scheduleComputer();
-    } else { draw(); showResult(); }
+    } else {
+      if (onlineMode) pushOnlineState();
+      draw(); showResult();
+    }
     draw();
   }
+
+  // ── ONLINE: push state to Supabase ───────────────────────
+  async function pushOnlineState() {
+    if (!roomCode) return;
+    const state = {
+      hLines, vLines, boxes, scores, currentPlayer,
+      p1, p2, p1color, p2color, DOTS, bonusRule, gameOver: isGameOver()
+    };
+    await supabaseClient.from('games').upsert({ id: roomCode, state, updated_at: new Date().toISOString() });
+  }
+
+  // ── ONLINE: apply remote state ────────────────────────────
+  function syncFromRemote(state) {
+    hLines = state.hLines;
+    vLines = state.vLines;
+    boxes  = state.boxes;
+    scores = state.scores;
+    currentPlayer = state.currentPlayer;
+    p1 = state.p1; p2 = state.p2;
+    p1color = state.p1color; p2color = state.p2color;
+    DOTS = state.DOTS;
+    bonusRule = state.bonusRule;
+    applyColors();
+    score1El.textContent = scores[0];
+    score2El.textContent = scores[1];
+    name1El.textContent = p1;
+    name2El.textContent = p2;
+    updateTurnIndicator();
+    draw();
+    if (state.gameOver) showResult();
+  }
+
+  // ── ONLINE: clean up channel ──────────────────────────────
+  function cleanupOnlineChannel() {
+    if (supabaseChannel) {
+      supabaseClient.removeChannel(supabaseChannel);
+      supabaseChannel = null;
+    }
+  }
+
+  // ── ONLINE: subscribe to realtime updates ────────────────
+  function subscribeToRoom(code) {
+    cleanupOnlineChannel();
+    supabaseChannel = supabaseClient
+      .channel(`room:${code}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${code}`
+      }, payload => {
+        if (payload.new && payload.new.state) {
+          syncFromRemote(payload.new.state);
+        }
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          document.getElementById('createStatus').textContent = '';
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          showOnlineConnectionError();
+        }
+      });
+  }
+
+  // ── ONLINE: show connection error ─────────────────────────
+  function showOnlineConnectionError() {
+    cleanupOnlineChannel();
+    gameEl.style.display = 'none';
+    setupEl.style.display = 'flex';
+    alert('Connection lost. Please start a new game.');
+  }
+
+  // ── ONLINE: launch game after both players ready ──────────
+  function launchOnlineGame(state) {
+    p1 = state.p1; p2 = state.p2;
+    p1color = state.p1color; p2color = state.p2color;
+    DOTS = state.DOTS;
+    bonusRule = state.bonusRule;
+    timedMode = false;
+    vsComputer = false;
+    seriesMode = 'single'; seriesTarget = 0;
+    record = { p1wins:0, p2wins:0, ties:0 };
+    document.getElementById('rematchBtn').disabled = true;
+    name1El.textContent = p1;
+    name2El.textContent = p2;
+    applyColors();
+    currentPlayer = state.currentPlayer;
+    hLines = state.hLines;
+    vLines = state.vLines;
+    boxes  = state.boxes;
+    scores = state.scores;
+    animatingBoxes = []; moveHistory = []; lastMove = null;
+    score1El.textContent = scores[0]; score2El.textContent = scores[1];
+    undoBtn.disabled = true;
+    hideTimer();
+    const C = getCanvasCell(), sz = (DOTS-1)*C + PAD*2;
+    canvas.width = sz; canvas.height = sz;
+    updateTurnIndicator(); draw();
+    setupEl.style.display  = 'none';
+    resultEl.style.display = 'none';
+    gameEl.style.display   = 'flex';
+  }
+
+  // ── ONLINE: create game ───────────────────────────────────
+  document.getElementById('createGameBtn').addEventListener('click', async () => {
+    const p1name = document.getElementById('p1name').value.trim() || 'Player 1';
+    p1color = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
+    p2color = '#4895ef';
+    const dotsSel = parseInt(document.querySelector('.size-card.selected').dataset.dots);
+    const bonusSel = document.getElementById('bonusTurn').checked;
+
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    roomCode = code;
+    onlineMode = true;
+    onlinePlayer = 1;
+
+    const state = {
+      hLines: Array.from({length:dotsSel},()=>Array(dotsSel-1).fill(0)),
+      vLines: Array.from({length:dotsSel-1},()=>Array(dotsSel).fill(0)),
+      boxes:  Array.from({length:dotsSel-1},()=>Array(dotsSel-1).fill(0)),
+      scores: [0,0], currentPlayer: 1,
+      p1: p1name, p2: 'Opponent',
+      p1color, p2color,
+      DOTS: dotsSel, bonusRule: bonusSel, gameOver: false
+    };
+
+    const { error } = await supabaseClient.from('games').upsert({ id: code, state, updated_at: new Date().toISOString() });
+    if (error) {
+      document.getElementById('createStatus').textContent = 'Error creating game. Try again.';
+      return;
+    }
+
+    document.getElementById('createCode').textContent = code;
+    document.getElementById('createCode').style.display = 'block';
+    document.getElementById('createStatus').textContent = 'Waiting for opponent...';
+
+    subscribeToRoom(code);
+
+    // watch for opponent joining (p2 name will change from 'Opponent')
+    const waitSub = supabaseClient
+      .channel(`wait:${code}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${code}`
+      }, payload => {
+        if (payload.new && payload.new.state && payload.new.state.p2 !== 'Opponent') {
+          supabaseClient.removeChannel(waitSub);
+          launchOnlineGame(payload.new.state);
+          // re-subscribe with main channel after launch
+          subscribeToRoom(code);
+        }
+      })
+      .subscribe();
+  });
+
+  // ── ONLINE: join game ─────────────────────────────────────
+  document.getElementById('joinGameBtn').addEventListener('click', async () => {
+    const code = document.getElementById('joinCodeInput').value.trim().toUpperCase().replace(/\D/g,'');
+    document.getElementById('joinError').textContent = '';
+    if (code.length !== 4) {
+      document.getElementById('joinError').textContent = 'Please enter a 4-digit room code.';
+      return;
+    }
+
+    const { data, error } = await supabaseClient.from('games').select('state').eq('id', code).single();
+    if (error || !data) {
+      document.getElementById('joinError').textContent = 'Room not found. Check the code and try again.';
+      return;
+    }
+
+    const p2name = document.getElementById('p1name').value.trim() || 'Player 2';
+    roomCode = code;
+    onlineMode = true;
+    onlinePlayer = 2;
+
+    const selectedColor = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
+    const p2color = selectedColor === data.state.p1color ? '#4895ef' : selectedColor;
+    const updatedState = { ...data.state, p2: p2name, p2color };
+
+    await supabaseClient.from('games').upsert({ id: code, state: updatedState, updated_at: new Date().toISOString() });
+
+    subscribeToRoom(code);
+    launchOnlineGame(updatedState);
+  });
 
   // ── COMPUTER TURN ───────────────────────────────────────
   function scheduleComputer() {
@@ -908,11 +1176,20 @@
 
   function updateTurnIndicator() {
     const name = currentPlayer===1 ? p1 : p2;
-    turnInd.textContent = `${name}'s turn`;
+    if (onlineMode) {
+      if (currentPlayer === onlinePlayer) {
+        turnInd.textContent = `Your turn`;
+      } else {
+        turnInd.textContent = `${name}'s turn — waiting...`;
+      }
+    } else {
+      turnInd.textContent = `${name}'s turn`;
+    }
     card1.classList.toggle('active',   currentPlayer===1);
     card1.classList.toggle('inactive', currentPlayer!==1);
     card2.classList.toggle('active',   currentPlayer===2);
     card2.classList.toggle('inactive', currentPlayer!==2);
+    if (onlineMode) { stopTimer(); return; }
     if (vsComputer && currentPlayer===2) stopTimer(); else startTimer();
   }
 
@@ -992,7 +1269,12 @@
 
   // ── RESULT ──────────────────────────────────────────────
   function showResult() {
-    hideTimer(); gameEl.style.display='none'; resultEl.style.display='flex';
+    hideTimer();
+    if (onlineMode) {
+      cleanupOnlineChannel();
+      document.getElementById('rematchBtn').disabled = true;
+    }
+    gameEl.style.display='none'; resultEl.style.display='flex';
     const [s1,s2]=scores;
     document.getElementById('finalName1').textContent  = p1;
     document.getElementById('finalName2').textContent  = p2;
@@ -1072,9 +1354,12 @@
 
   // ── REMATCH / NEW GAME ──────────────────────────────────
   document.getElementById('rematchBtn').addEventListener('click', () => {
+    if (onlineMode) return;
     resultEl.style.display='none'; initGame(); gameEl.style.display='flex';
   });
   document.getElementById('newGameBtn').addEventListener('click', () => {
+    cleanupOnlineChannel();
+    onlineMode = false; onlinePlayer = null; roomCode = null;
     resultEl.style.display='none'; setupEl.style.display='flex';
   });
 
@@ -1094,6 +1379,8 @@
     hideResetOptions();
   });
   document.getElementById('resetSetupBtn').addEventListener('click', () => {
+    cleanupOnlineChannel();
+    onlineMode = false; onlinePlayer = null; roomCode = null;
     gameEl.style.display = 'none';
     setupEl.style.display = 'flex';
     hideResetOptions();
