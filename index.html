@@ -938,6 +938,21 @@
 
   // ── ONLINE: apply remote state ────────────────────────────
   function syncFromRemote(state) {
+    // detect which line changed before overwriting local state
+    lastMove = null;
+    outer: for (let r = 0; r < state.hLines.length; r++) {
+      for (let c = 0; c < state.hLines[r].length; c++) {
+        if (hLines[r][c] !== state.hLines[r][c]) { lastMove = {type:'h', r, c}; break outer; }
+      }
+    }
+    if (!lastMove) {
+      outer2: for (let r = 0; r < state.vLines.length; r++) {
+        for (let c = 0; c < state.vLines[r].length; c++) {
+          if (vLines[r][c] !== state.vLines[r][c]) { lastMove = {type:'v', r, c}; break outer2; }
+        }
+      }
+    }
+
     hLines = state.hLines;
     vLines = state.vLines;
     boxes  = state.boxes;
