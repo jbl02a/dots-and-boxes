@@ -184,6 +184,14 @@
     .icon-btn:hover    { border-color: #ffd700; color: #ffd700; }
     .icon-btn:disabled { opacity: 0.3; cursor: default; border-color: #333; color: #555; }
 
+    #campaignQuitConfirm {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 8px 12px; width: 100%;
+      background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.5);
+      border-radius: 8px; font-size: 0.85rem; color: #eee;
+    }
+    #campaignQuitConfirm span { flex: 1; min-width: 160px; }
+
     #timerDisplay {
       font-size: 1.5rem; font-weight: bold; letter-spacing: 2px;
       min-width: 48px; text-align: center; transition: color 0.3s;
@@ -521,6 +529,14 @@
     }
     #levelPreviewModal .lp-back:hover { border-color: #ffd700; color: #ffd700; }
 
+    #levelPreviewModal .lp-player-setup { width: 100%; text-align: left; }
+    #levelPreviewModal .lp-field-label  { font-size: 0.8rem; color: #aaa; margin-bottom: 6px; }
+    #levelPreviewModal #lpName {
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      border: 1px solid #333; background: #0f3460; color: #fff; font-size: 0.95rem;
+    }
+    #levelPreviewModal .color-swatches { justify-content: flex-start; }
+
     /* ── CAMPAIGN WIN / LOSS OVERLAYS ── */
     #campaignWinOverlay, #campaignLossOverlay {
       display: none;
@@ -693,6 +709,12 @@
       <div class="lp-row"><span>Timer</span><span id="lpTimer"></span></div>
     </div>
     <div class="lp-unlock" id="lpUnlock" style="display:none"></div>
+    <div class="lp-player-setup">
+      <div class="lp-field-label">Your Name</div>
+      <input type="text" id="lpName" placeholder="Enter name..." maxlength="12">
+      <div class="lp-field-label" style="margin-top:10px;">Your Color</div>
+      <div class="color-swatches" id="lpSwatches"></div>
+    </div>
     <div class="lp-btns">
       <button class="lp-back" onclick="closeLevelPreview()">← Back</button>
       <button class="lp-play" id="lpPlayBtn">▶ PLAY</button>
@@ -749,8 +771,15 @@
       <button class="icon-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
       <button class="icon-btn" id="resetBtn">🔄 Reset</button>
       <span id="resetOptions" style="display:none;gap:6px"><button class="icon-btn" id="resetRestartBtn">↺ Restart</button><button class="icon-btn" id="resetSetupBtn">⚙️ Setup</button></span>
+      <button class="icon-btn" id="campaignQuitBtn" style="display:none">🚩 Quit</button>
       <button class="icon-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
     </div>
+  </div>
+
+  <div id="campaignQuitConfirm" style="display:none">
+    <span>Quit campaign level? Your progress on this level will be lost.</span>
+    <button class="icon-btn" id="campaignQuitConfirmYes">Confirm</button>
+    <button class="icon-btn" id="campaignQuitConfirmNo">Cancel</button>
   </div>
 
   <div id="dotsThinking"></div>
@@ -899,6 +928,8 @@
     } else {
       unlockEl.style.display = 'none';
     }
+    document.getElementById('lpName').value = document.getElementById('p1name').value;
+    buildLpSwatches();
     document.getElementById('lpPlayBtn').onclick = () => startCampaignLevel(levelNumber);
     document.getElementById('levelPreviewModal').style.display = 'flex';
   }
@@ -927,10 +958,12 @@
     document.getElementById('onlineOptions').style.display = 'none';
 
     // Set game state variables (same order as the startBtn handler)
-    p1        = document.getElementById('p1name').value.trim() || 'Player 1';
+    p1        = document.getElementById('lpName').value.trim() ||
+                document.getElementById('p1name').value.trim() || 'Player 1';
     bonusRule = document.getElementById('bonusTurn').checked;
     timedMode = cfg.timed;
-    p1color   = document.querySelector('#p1swatches .color-swatch.selected').dataset.color;
+    p1color   = (document.querySelector('#lpSwatches .color-swatch.selected') ||
+                 document.querySelector('#p1swatches .color-swatch.selected')).dataset.color;
     p2color   = document.querySelector('#p2swatches .color-swatch.selected').dataset.color;
     applyColors();
     vsComputer  = true;
@@ -1098,6 +1131,53 @@
     // Show/hide XXL grid option
     const xxlCard = document.getElementById('xxlCard');
     if (xxlCard) xxlCard.style.display = campaignState.xxxlUnlocked ? '' : 'none';
+  }
+
+  const LP_STANDARD_COLORS = ['#e94560','#ff9f43','#ffd700','#51cf66','#cc5de8','#ffffff'];
+
+  function buildLpSwatches() {
+    const currentColor = (document.querySelector('#p1swatches .color-swatch.selected') ||
+                          document.querySelector('#p1swatches .color-swatch'))?.dataset.color || '#e94560';
+    const container = document.getElementById('lpSwatches');
+    container.innerHTML = '';
+
+    LP_STANDARD_COLORS.forEach(hex => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (hex === currentColor ? ' selected' : '');
+      sw.dataset.color = hex;
+      sw.style.background = hex;
+      sw.addEventListener('click', () => {
+        container.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+        sw.classList.add('selected');
+      });
+      container.appendChild(sw);
+    });
+
+    CAMPAIGN_COLORS.forEach(({ key, hex, level }) => {
+      const unlocked = campaignState.unlockedColors.includes(key);
+      if (unlocked) {
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch' + (hex === currentColor ? ' selected' : '');
+        sw.dataset.color = hex;
+        sw.style.background = hex;
+        sw.addEventListener('click', () => {
+          container.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+          sw.classList.add('selected');
+        });
+        container.appendChild(sw);
+      } else {
+        const wrap = document.createElement('div');
+        wrap.className = 'swatch-lock-wrap';
+        wrap.title = `Unlock at Campaign Level ${level}`;
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch locked';
+        sw.dataset.color = hex;
+        sw.style.cssText = `background:${hex};position:relative`;
+        sw.innerHTML = '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.65rem;background:rgba(0,0,0,0.55);border-radius:50%;pointer-events:none">🔒</span>';
+        wrap.appendChild(sw);
+        container.appendChild(wrap);
+      }
+    });
   }
 
   function handleCampaignWin() {
@@ -1394,6 +1474,8 @@
     const C = getCanvasCell(), sz = (DOTS-1)*C + PAD*2;
     canvas.width = sz; canvas.height = sz;
     updateTurnIndicator(); draw();
+    document.getElementById('campaignQuitBtn').style.display = inCampaignMode ? '' : 'none';
+    document.getElementById('campaignQuitConfirm').style.display = 'none';
   }
 
   // ── DRAW ────────────────────────────────────────────────
@@ -2055,6 +2137,20 @@
     gameEl.style.display = 'none';
     setupEl.style.display = 'flex';
     hideResetOptions();
+  });
+
+  // ── CAMPAIGN QUIT ─────────────────────────────────────────
+  document.getElementById('campaignQuitBtn').addEventListener('click', () => {
+    document.getElementById('campaignQuitConfirm').style.display = 'flex';
+  });
+  document.getElementById('campaignQuitConfirmYes').addEventListener('click', () => {
+    document.getElementById('campaignQuitConfirm').style.display = 'none';
+    inCampaignMode = false;
+    dotsPersonalityName = 'D.O.T.S.';
+    openCampaignMap();
+  });
+  document.getElementById('campaignQuitConfirmNo').addEventListener('click', () => {
+    document.getElementById('campaignQuitConfirm').style.display = 'none';
   });
 
   if ('serviceWorker' in navigator) {
