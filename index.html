@@ -419,6 +419,7 @@
   let timedMode, timerSeconds, timerInterval;
   let hLines, vLines, boxes, scores, animatingBoxes, record, vsComputer, difficulty;
   let moveHistory = [];
+  let lastMove = null;
   let dotsFirstBlood = false, dotsConsecutive = 0, lastQuip = '';
   let computerMovePending = false;
 
@@ -635,7 +636,7 @@
     hLines = Array.from({length:DOTS},   ()=>Array(DOTS-1).fill(0));
     vLines = Array.from({length:DOTS-1}, ()=>Array(DOTS).fill(0));
     boxes  = Array.from({length:DOTS-1}, ()=>Array(DOTS-1).fill(0));
-    animatingBoxes = []; moveHistory = []; scores = [0,0];
+    animatingBoxes = []; moveHistory = []; scores = [0,0]; lastMove = null;
     score1El.textContent = '0'; score2El.textContent = '0';
     undoBtn.disabled = true;
     dotsFirstBlood = false; dotsConsecutive = 0; lastQuip = '';
@@ -680,16 +681,18 @@
     for (let r=0;r<DOTS;r++) for (let c=0;c<DOTS-1;c++) {
       const x1=PAD+c*C, y1=PAD+r*C;
       const hov = hoverLine&&hoverLine.type==='h'&&hoverLine.r===r&&hoverLine.c===c;
+      const isLast = lastMove&&lastMove.type==='h'&&lastMove.r===r&&lastMove.c===c&&hLines[r][c];
       ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x1+C,y1);
-      ctx.strokeStyle = hLines[r][c] ? (hLines[r][c]===1?p1color:p2color) : hov ? '#ffd700' : '#333355';
+      ctx.strokeStyle = isLast ? '#ffd700' : hLines[r][c] ? (hLines[r][c]===1?p1color:p2color) : hov ? '#ffd700' : '#333355';
       ctx.lineWidth = (hLines[r][c]||hov) ? 4 : 2; ctx.stroke();
     }
 
     for (let r=0;r<DOTS-1;r++) for (let c=0;c<DOTS;c++) {
       const x1=PAD+c*C, y1=PAD+r*C;
       const hov = hoverLine&&hoverLine.type==='v'&&hoverLine.r===r&&hoverLine.c===c;
+      const isLast = lastMove&&lastMove.type==='v'&&lastMove.r===r&&lastMove.c===c&&vLines[r][c];
       ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x1,y1+C);
-      ctx.strokeStyle = vLines[r][c] ? (vLines[r][c]===1?p1color:p2color) : hov ? '#ffd700' : '#333355';
+      ctx.strokeStyle = isLast ? '#ffd700' : vLines[r][c] ? (vLines[r][c]===1?p1color:p2color) : hov ? '#ffd700' : '#333355';
       ctx.lineWidth = (vLines[r][c]||hov) ? 4 : 2; ctx.stroke();
     }
 
@@ -790,6 +793,7 @@
     if (computerMovePending) return;
     saveSnapshot(); stopTimer();
     if (type==='h') hLines[r][c]=currentPlayer; else vLines[r][c]=currentPlayer;
+    lastMove = {type, r, c};
     playSound('click');
     const claimed = checkBoxes();
     if (claimed > 0) {
@@ -822,6 +826,7 @@
     saveSnapshot();
     const willClaim = moveCompletesBox(move.type, move.r, move.c);
     if (move.type==='h') hLines[move.r][move.c]=2; else vLines[move.r][move.c]=2;
+    lastMove = {type: move.type, r: move.r, c: move.c};
     playSound('click');
 
     const claimed = checkBoxes();
