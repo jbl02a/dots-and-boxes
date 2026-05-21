@@ -816,6 +816,7 @@
     computerMovePending = true;
     undoBtn.disabled = true;
     setDotsThinking(true);
+    turnInd.textContent = '🤖 D.O.T.S. is thinking...';
     setTimeout(() => { setDotsThinking(false); doComputerTurn(); }, 500 + Math.random()*400);
   }
 
@@ -984,7 +985,7 @@
       title.textContent="It's a Tie!";
       document.getElementById('finalCard1').classList.remove('winner-card');
       document.getElementById('finalCard2').classList.remove('winner-card');
-      record.ties++;
+      record.ties++; launchConfetti();
     }
     document.getElementById('record1').textContent = `W: ${record.p1wins} · L: ${record.p2wins}`;
     document.getElementById('record2').textContent = `W: ${record.p2wins} · L: ${record.p1wins}`;
